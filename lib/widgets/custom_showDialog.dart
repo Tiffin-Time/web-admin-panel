@@ -16,7 +16,7 @@ Future uploadedDishValidateErrorDialog(BuildContext context) {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CustomText(
+              const CustomText(
                   size: 17,
                   fontWeight: FontWeight.w600,
                   text:

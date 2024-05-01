@@ -12,6 +12,7 @@ import 'package:adminpanelweb/widgets/custom_btn.dart';
 import 'package:adminpanelweb/widgets/custom_dis_textfield.dart';
 import 'package:adminpanelweb/widgets/custom_showDialog.dart';
 import 'package:adminpanelweb/widgets/custom_textfield.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -33,6 +34,10 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
   List<Dish> dishes = [];
   List<Offer> offers = [];
   String? currentRestaurantDocId;
+  Image? _displayImage;
+  html.File? selectedFile;
+  Uint8List? _selectedImageData;
+  String? _uploadedImageUrl;
 
   List<String> options = [
     'Vegetarian',
@@ -195,30 +200,124 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
     );
   }
 
-  //pick image
-  Uint8List? _pickedImage;
+  Future<String> uploadImage(html.File file) async {
+    final reader = html.FileReader();
+    reader.readAsArrayBuffer(file);
+    await reader.onLoad.first;
+    final Uint8List data = reader.result as Uint8List;
+
+    String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+    String storagePath =
+        'company/images/dish_images/${widget.userDocId}/$fileName';
+
+    FirebaseStorage storage = FirebaseStorage.instance;
+    Reference ref = storage.ref().child(storagePath);
+    TaskSnapshot uploadTask = await ref.putData(data);
+    return await uploadTask.ref.getDownloadURL();
+  }
+
+// Adds a dish to the Firestore database
+  void addDish(String downloadUrl) {
+    Dish dish = Dish(
+      name: dishNameController.text,
+      description: dishDescriptionController.text,
+      price: double.parse(dishPriceController.text),
+      typeOfDish: dishTypeValue,
+      assignTags: getSelectedTags(),
+      comboWithAnotherDish: combowithAnotherDishValue,
+      comboPrice: double.parse(dishComboPriceController.text),
+      dishImage: downloadUrl,
+      dateAvailability: getAvailabilityMap(_dateAvailability, isSelected),
+    );
+    addDishToLocalList(dish); // Add to local preview list
+  }
+
+  void _handleFileReadError(dynamic error) {
+    // Handle the error (e.g., show a message to the user)
+    print('Error reading file: $error');
+  }
+
+  void _readImageFile(html.File file) {
+    final reader = html.FileReader();
+
+    reader.onError.listen(_handleFileReadError);
+
+    try {
+      reader.readAsArrayBuffer(file);
+      reader.onLoad.listen((event) {
+        if (reader.result != null) {
+          final Uint8List data = reader.result as Uint8List;
+          // Proceed with the image data
+        } else {
+          throw Exception('Failed to read file data');
+        }
+      });
+    } catch (e) {
+      _handleFileReadError(e);
+    }
+    // Log image size and type
+    print('File size: ${file.size}');
+    print('File type: ${file.type}');
+
+// Add further logging to inspect data in other parts of your process
+  }
 
   void _pickImage() {
-    final InputElement input = document.createElement('input') as InputElement;
-
-    input
-      ..type = 'file'
+    final html.FileUploadInputElement input = html.FileUploadInputElement()
       ..accept = 'image/*';
+    input.click();
 
     input.onChange.listen((event) {
-      final File file = input.files!.first;
-      final FileReader reader = FileReader();
+      if (input.files != null && input.files!.isNotEmpty) {
+        final html.File file = input.files!.first;
 
-      reader.readAsDataUrl(file);
-      reader.onLoadEnd.listen((event) {
-        setState(() {
-          _pickedImage =
-              base64.decode(reader.result!.toString().split(",").last);
+        // Check if the file is empty
+        if (file.size == 0) {
+          _showError('Selected file is empty');
+          return;
+        }
+
+        // Check the file format
+        final supportedFormats = ['image/jpeg', 'image/png'];
+        if (!supportedFormats.contains(file.type)) {
+          _showError(
+              'Unsupported file format. Please select a JPEG or PNG image');
+          return;
+        }
+
+        // Read the file as bytes
+        final reader = html.FileReader();
+        reader.readAsArrayBuffer(file);
+
+        reader.onLoadEnd.listen((event) {
+          final Uint8List? data = reader.result as Uint8List?;
+
+          if (data == null || data.isEmpty) {
+            _showError('Failed to read file');
+            return;
+          }
+
+          // Update the state with the selected image data
+          setState(() {
+            _selectedImageData = data;
+            selectedFile = file;
+          });
         });
-      });
-    });
 
-    input.click();
+        reader.onError.listen((error) {
+          _showError('Failed to read file: $error');
+        });
+      } else {
+        _showError('No file selected');
+      }
+    });
+  }
+
+// Helper method to show an error message
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
   }
 
   void addDishToLocalList(Dish dish) {
@@ -227,42 +326,77 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    Future<void> uploadDishesToFirestore() async {
-      // Proceed with uploading the dishes
-      if (widget.userDocId == null) {
-        print('No user document ID provided');
-        return;
-      }
-
-      DocumentReference restaurantDoc = FirebaseFirestore.instance
-          .collection('Restaurants')
-          .doc(widget.userDocId);
-
-      // Check if the document exists
-      DocumentSnapshot docSnapshot = await restaurantDoc.get();
-      if (!docSnapshot.exists) {
-        // Create the document with the basic structure if it doesn't exist
-        await restaurantDoc.set({});
-      }
-
-      // Prepare the data structure for Firestore
-      Map<String, Map<String, dynamic>> dishMaps = {
-        for (Dish dish in dishes) dish.name: dish.toFirestoreMap()
-      };
-
-      // Update the document with the dishes data
-      await restaurantDoc.update({'dishes': dishMaps});
-
-      print('Updating restaurant with ID: ${widget.userDocId}');
-
-      // Clear the local dishes list after uploading
-      setState(() {
-        dishes.clear();
-      });
+  void _addDishLocally() {
+    if (dishNameController.text.isEmpty ||
+        dishDescriptionController.text.isEmpty ||
+        dishPriceController.text.isEmpty ||
+        _selectedImageData == null) {
+      _showError(
+          'Please fill in all details and select an image.'); //TODO: CAN USE ERROR MESSAGE FROM FREELANCER
+      return;
     }
 
+    final dish = Dish(
+      name: dishNameController.text,
+      description: dishDescriptionController.text,
+      price: double.parse(dishPriceController.text),
+      typeOfDish: dishTypeValue,
+      assignTags: getSelectedTags(),
+      comboWithAnotherDish: combowithAnotherDishValue,
+      comboPrice: double.parse(dishComboPriceController.text),
+      dishImage: base64Encode(
+          _selectedImageData!), // Use encoded image for local preview
+      dateAvailability: getAvailabilityMap(_dateAvailability, isSelected),
+    );
+
+    setState(() {
+      dishes.add(dish); // Add dish locally
+    });
+
+    // Clear the form fields and update the UI as needed
+    dishNameController.clear();
+    dishDescriptionController.clear();
+    dishPriceController.clear();
+    dishComboPriceController.clear();
+    selectedFile = null;
+  }
+
+  Future<void> uploadDishesToFirestore() async {
+    // Proceed with uploading the dishes
+    if (widget.userDocId == null) {
+      print('No user document ID provided');
+      return;
+    }
+
+    DocumentReference restaurantDoc = FirebaseFirestore.instance
+        .collection('Restaurants')
+        .doc(widget.userDocId);
+
+    // Check if the document exists
+    DocumentSnapshot docSnapshot = await restaurantDoc.get();
+    if (!docSnapshot.exists) {
+      // Create the document with the basic structure if it doesn't exist
+      await restaurantDoc.set({});
+    }
+
+    // Prepare the data structure for Firestore
+    Map<String, Map<String, dynamic>> dishMaps = {
+      for (Dish dish in dishes) dish.name: dish.toFirestoreMap()
+    };
+
+    // Update the document with the dishes data
+    await restaurantDoc.update({'dishes': dishMaps});
+
+    print('Updating restaurant with ID: ${widget.userDocId}');
+
+    // Clear the local dishes list after uploading
+    setState(() {
+      dishes.clear();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     var size = MediaQuery.of(context).size;
     return Scaffold(
       body: SafeArea(
@@ -272,6 +406,20 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Check if _displayImage is not null and display it
+                if (_displayImage != null)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    height: 100,
+                    width: 100,
+                    child: _displayImage,
+                  )
+                else
+                  Container(
+                    height: 100,
+                    width: 100,
+                    child: const Icon(Icons.image_not_supported),
+                  ),
                 const CustomText(
                     size: 23,
                     text: "Menu Upload",
@@ -534,19 +682,20 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
                                     fontWeight: FontWeight.w500,
                                     textColor: blackColor),
                                 const Gap(5),
-                                if (_pickedImage != null)
+                                if (_selectedImageData != null &&
+                                    _selectedImageData!.isNotEmpty)
                                   Container(
                                     margin: const EdgeInsets.only(bottom: 10),
                                     height: 100,
                                     width: 100,
                                     child: Image.memory(
-                                      _pickedImage!,
-                                      fit: BoxFit.fitHeight,
+                                      _selectedImageData!,
+                                      fit: BoxFit.cover,
                                     ),
                                   ),
                                 ElevatedButton(
                                   onPressed: _pickImage,
-                                  child: Text(_pickedImage != null
+                                  child: Text(selectedFile != null
                                       ? 'Change Image'
                                       : 'Select Image'),
                                 ),
@@ -574,6 +723,13 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
                                           ToggleButtons(
                                             borderRadius:
                                                 BorderRadius.circular(30),
+                                            onPressed: (int index) {
+                                              setState(() {
+                                                isSelected[index] =
+                                                    !isSelected[index];
+                                              });
+                                            },
+                                            isSelected: isSelected,
                                             children: const [
                                               Text('Mon'),
                                               Text('Tue'),
@@ -583,13 +739,6 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
                                               Text('Sat'),
                                               Text('Sun'),
                                             ],
-                                            onPressed: (int index) {
-                                              setState(() {
-                                                isSelected[index] =
-                                                    !isSelected[index];
-                                              });
-                                            },
-                                            isSelected: isSelected,
                                           ),
                                           const Gap(20),
                                         ],
@@ -606,47 +755,21 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
                       const Gap(20),
                       CustomButton(
                         text: 'Add a Dish',
-                        onPressed: () {
-                          if (dishNameController.text.isEmpty ||
-                              dishDescriptionController.text.isEmpty ||
-                              dishPriceController.text.isEmpty ||
-                              dishComboPriceController.text.isEmpty ||
-                              _pickedImage == null) {
-                            uploadedDishValidateErrorDialog(context);
-                            return;
-                          }
-
-                          Dish newDish = Dish(
-                            name: dishNameController.text,
-                            description: dishDescriptionController.text,
-                            price: double.parse(dishPriceController.text),
-                            typeOfDish: dishTypeValue,
-                            assignTags: getSelectedTags(),
-                            comboWithAnotherDish: combowithAnotherDishValue,
-                            comboPrice:
-                                double.parse(dishComboPriceController.text),
-                            dishImage: base64.encode(_pickedImage!),
-                            dateAvailability: getAvailabilityMap(
-                                _dateAvailability, isSelected),
-                          );
-
-                          // Add the dish to the local list
-                          addDishToLocalList(newDish);
-
-                          // Clear the form fields and update the UI as needed
-                          setState(() {
-                            dishNameController.clear();
-                            dishDescriptionController.clear();
-                            dishPriceController.clear();
-                            dishComboPriceController.clear();
-                            _pickedImage = null;
-                            isSelected = List.generate(7, (index) => false);
-                          });
-
-                          // Optionally, show a dialog or a snackbar to inform the user of success
-                        },
+                        onPressed: _addDishLocally,
                         width: 140,
                         color: lightBlue,
+                      ),
+                      ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: dishes.length,
+                        itemBuilder: (context, index) {
+                          Dish dish = dishes[index];
+                          return ListTile(
+                            title: Text(dish.name),
+                            subtitle: Text(dish.description),
+                            leading: Image.memory(base64Decode(dish.dishImage)),
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -868,33 +991,7 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
                   alignment: Alignment.centerLeft,
                   child: CustomButton(
                     text: 'Save Changes',
-                    onPressed: () async {
-                      // Get the current time
-                      DateTime now = DateTime.now();
-
-                      // Check if today is Sunday and the current time is between 3 PM and 5 PM
-                      bool isSunday = now.weekday == DateTime.wednesday;
-                      bool isBetween3And5PM = (now.hour >= 6 && now.hour < 23);
-
-                      if (!(isSunday && isBetween3And5PM)) {
-                        ScaffoldMessenger.of(context)
-                            .showSnackBar(const SnackBar(
-                          content: Text(
-                              "You can only upload menus on Sundays between 3 PM and 5 PM"),
-                          backgroundColor: Colors.red,
-                        ));
-                        return; // Exit the function if it's not the allowed time
-                      }
-
-                      // Call upload function if the conditions are met
-                      await uploadDishesToFirestore();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Dishes uploaded successfully"),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
-                    },
+                    onPressed: uploadDishesToFirestore,
                     width: 140,
                     color: lightBlue,
                   ),

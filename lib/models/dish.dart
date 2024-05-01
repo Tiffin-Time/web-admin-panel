@@ -1,5 +1,3 @@
-import 'package:adminpanelweb/screens/menu_upload_screen.dart';
-
 class Dish {
   final String name;
   final String description;
