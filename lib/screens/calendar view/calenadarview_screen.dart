@@ -8,7 +8,9 @@ import 'package:gap/gap.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ViewSchedulePage extends StatefulWidget {
-  const ViewSchedulePage({Key? key}) : super(key: key);
+  final String? userDocId;
+
+  const ViewSchedulePage({Key? key, this.userDocId}) : super(key: key);
 
   @override
   State<ViewSchedulePage> createState() => _ViewSchedulePageState();

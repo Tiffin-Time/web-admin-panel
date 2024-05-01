@@ -17,7 +17,9 @@ import 'package:gap/gap.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class MenuUploadScreen extends StatefulWidget {
-  const MenuUploadScreen({super.key});
+  final String? userDocId;
+
+  const MenuUploadScreen({Key? key, this.userDocId}) : super(key: key);
 
   @override
   State<MenuUploadScreen> createState() => _MenuUploadScreenState();
@@ -219,8 +221,48 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
     input.click();
   }
 
+  void addDishToLocalList(Dish dish) {
+    setState(() {
+      dishes.add(dish);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    Future<void> uploadDishesToFirestore() async {
+      // Proceed with uploading the dishes
+      if (widget.userDocId == null) {
+        print('No user document ID provided');
+        return;
+      }
+
+      DocumentReference restaurantDoc = FirebaseFirestore.instance
+          .collection('Restaurants')
+          .doc(widget.userDocId);
+
+      // Check if the document exists
+      DocumentSnapshot docSnapshot = await restaurantDoc.get();
+      if (!docSnapshot.exists) {
+        // Create the document with the basic structure if it doesn't exist
+        await restaurantDoc.set({});
+      }
+
+      // Prepare the data structure for Firestore
+      Map<String, Map<String, dynamic>> dishMaps = {
+        for (Dish dish in dishes) dish.name: dish.toFirestoreMap()
+      };
+
+      // Update the document with the dishes data
+      await restaurantDoc.update({'dishes': dishMaps});
+
+      print('Updating restaurant with ID: ${widget.userDocId}');
+
+      // Clear the local dishes list after uploading
+      setState(() {
+        dishes.clear();
+      });
+    }
+
     var size = MediaQuery.of(context).size;
     return Scaffold(
       body: SafeArea(
@@ -256,7 +298,7 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
                         children: [
                           const CustomText(
                             size: 16,
-                            text: 'You added Dishes,',
+                            text: 'You added Dishes',
                             fontWeight: FontWeight.bold,
                             textColor: blackColor,
                           ),
@@ -562,61 +604,15 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
                         ],
                       ),
                       const Gap(20),
-                      // CustomButton(
-                      //   text: 'Add a Dish',
-                      //   onPressed: () async {
-
-                      //     if (dishNameController.text.isEmpty ||
-                      //         dishDescriptionController.text.isEmpty ||
-                      //         dishPriceController.text.isEmpty ||
-                      //         dishComboPriceController.text.isEmpty ||
-                      //         _pickedImage == null) {
-                      //       await uploadedDishValidateErrorDialog(context);
-                      //       return;
-                      //     }
-
-                      //     try {
-                      //       setState(() {
-                      //         dishes.add(Dish(
-                      //           name: dishNameController.text,
-                      //           description: dishDescriptionController.text,
-                      //           price: double.parse(dishPriceController.text),
-                      //           typeOfDish: dishTypeValue,
-                      //           assignTags: getSelectedTags(),
-                      //           comboWithAnotherDish: combowithAnotherDishValue,
-                      //           comboPrice:
-                      //               double.parse(dishComboPriceController.text),
-                      //           dishImage: base64.encode(_pickedImage!),
-                      //           dateAvailability: _dateAvailability,
-                      //         ));
-                      //       });
-
-                      //       await dishSuccessfullyAddedDialog(context);
-                      //       setState(() {
-                      //         dishNameController.clear();
-                      //         dishNameController.clear();
-                      //         dishDescriptionController.clear();
-                      //         dishPriceController.clear();
-                      //         dishComboPriceController.clear();
-                      //         _pickedImage = null;
-                      //         isSelected = List.generate(7, (index) => false);
-                      //       });
-                      //     } catch (e) {
-                      //       print(e);
-                      //     }
-                      //   },
-                      //   width: 140,
-                      //   color: lightBlue,
-                      // ),
                       CustomButton(
                         text: 'Add a Dish',
-                        onPressed: () async {
+                        onPressed: () {
                           if (dishNameController.text.isEmpty ||
                               dishDescriptionController.text.isEmpty ||
                               dishPriceController.text.isEmpty ||
                               dishComboPriceController.text.isEmpty ||
                               _pickedImage == null) {
-                            await uploadedDishValidateErrorDialog(context);
+                            uploadedDishValidateErrorDialog(context);
                             return;
                           }
 
@@ -630,12 +626,12 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
                             comboPrice:
                                 double.parse(dishComboPriceController.text),
                             dishImage: base64.encode(_pickedImage!),
-                            dateAvailability:
-                                _dateAvailability, // Assuming this is of type DateAvailability
+                            dateAvailability: getAvailabilityMap(
+                                _dateAvailability, isSelected),
                           );
 
-                          // Save the new dish to Firestore
-                          await addDishToFirestore(newDish);
+                          // Add the dish to the local list
+                          addDishToLocalList(newDish);
 
                           // Clear the form fields and update the UI as needed
                           setState(() {
@@ -817,7 +813,7 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
 
                           const CustomText(
                             size: 16,
-                            text: 'If the customer orders,',
+                            text: 'If the customer orders',
                             fontWeight: FontWeight.w500,
                             textColor: blackColor,
                           ),
@@ -872,7 +868,33 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
                   alignment: Alignment.centerLeft,
                   child: CustomButton(
                     text: 'Save Changes',
-                    onPressed: downloadCSV,
+                    onPressed: () async {
+                      // Get the current time
+                      DateTime now = DateTime.now();
+
+                      // Check if today is Sunday and the current time is between 3 PM and 5 PM
+                      bool isSunday = now.weekday == DateTime.wednesday;
+                      bool isBetween3And5PM = (now.hour >= 6 && now.hour < 23);
+
+                      if (!(isSunday && isBetween3And5PM)) {
+                        ScaffoldMessenger.of(context)
+                            .showSnackBar(const SnackBar(
+                          content: Text(
+                              "You can only upload menus on Sundays between 3 PM and 5 PM"),
+                          backgroundColor: Colors.red,
+                        ));
+                        return; // Exit the function if it's not the allowed time
+                      }
+
+                      // Call upload function if the conditions are met
+                      await uploadDishesToFirestore();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Dishes uploaded successfully"),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    },
                     width: 140,
                     color: lightBlue,
                   ),
@@ -1070,24 +1092,31 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
   }
 }
 
-Future<void> addDishToFirestore(Dish dish) async {
-  String? currentRestaurantDocId;
-
-  if (currentRestaurantDocId == null) {
-    // Create a new restaurant document if one doesn't exist
-    DocumentReference newRestaurant =
-        await FirebaseFirestore.instance.collection('Restaurants').add({
-      'name':
-          'New Restaurant', // Placeholder, add other restaurant details as needed
-      'meals': [dish.toFirestoreMap()], // Start with the first dish
-    });
-
-    // Save the new restaurant's document ID
-    currentRestaurantDocId = newRestaurant.id;
-  } else {
-    // Add the dish to an existing restaurant document
-    await addDishToExistingRestaurant(currentRestaurantDocId!, dish);
+Future<void> addDishToFirestore(List<Dish> dishes, String? userDocId) async {
+  if (userDocId == null) {
+    print('No user document ID provided');
+    return;
   }
+
+  DocumentReference restaurantDoc =
+      FirebaseFirestore.instance.collection('Restaurants').doc(userDocId);
+
+  // Check if the document exists
+  DocumentSnapshot docSnapshot = await restaurantDoc.get();
+  if (!docSnapshot.exists) {
+    // Create the document with the basic structure if it doesn't exist
+    await restaurantDoc.set({});
+  }
+
+  // Prepare the data structure for Firestore
+  Map<String, Map<String, dynamic>> dishMaps = {
+    for (Dish dish in dishes) dish.name: dish.toFirestoreMap()
+  };
+
+  // Update the document with the dishes data
+  await restaurantDoc.update({'dishes': dishMaps});
+
+  print('Updating restaurant with ID: $userDocId');
 }
 
 Future<void> addDishToExistingRestaurant(
@@ -1098,6 +1127,30 @@ Future<void> addDishToExistingRestaurant(
   await restaurantDoc.update({
     'meals': FieldValue.arrayUnion([dish.toFirestoreMap()])
   });
+}
+
+Map<String, bool> getAvailabilityMap(
+    DateAvailability availability, List<bool> selectedDays) {
+  if (availability == DateAvailability.everyDay) {
+    return {
+      'Mon': true,
+      'Tue': true,
+      'Wed': true,
+      'Thu': true,
+      'Fri': true,
+      'Sat': true,
+      'Sun': true,
+    };
+  }
+
+  List<String> days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  Map<String, bool> availabilityMap = {};
+
+  for (int i = 0; i < days.length; i++) {
+    availabilityMap[days[i]] = selectedDays[i];
+  }
+
+  return availabilityMap;
 }
 
 enum DateAvailability { everyDay, selectedDays }

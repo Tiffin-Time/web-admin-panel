@@ -42,10 +42,11 @@ class _HomeState extends State<Home> {
   bool isLoggedIn = false;
   bool isAdministrator = false;
   int selectedIndex = 0; // Start with the login screen
+  String? userDocId; // Store the document ID
 
   List<String> get tabNames {
     if (!isLoggedIn) {
-      return ['Login']; // Only show Login when not logged in
+      return ['Login'];
     }
     List<String> tabs = [
       'General',
@@ -55,7 +56,7 @@ class _HomeState extends State<Home> {
       'Order History'
     ];
     if (isAdministrator) {
-      tabs.insert(0, 'Overview'); // Admins see 'Overview' at the top
+      tabs.insert(0, 'Overview');
     }
     return tabs;
   }
@@ -65,22 +66,22 @@ class _HomeState extends State<Home> {
       return [LoginPage(onLoginSuccess: _handleLoginSuccess)];
     }
     List<Widget> widgets = [
-      if (isAdministrator) OverviewScreen(),
-      GeneralScreen(),
-      MenuUploadScreen(),
-      SalesScreen(),
-      ViewSchedulePage(),
-      OrderHistoryScreen(),
+      if (isAdministrator) OverviewScreen(userDocId: userDocId),
+      GeneralScreen(userDocId: userDocId),
+      MenuUploadScreen(userDocId: userDocId),
+      SalesScreen(userDocId: userDocId),
+      ViewSchedulePage(userDocId: userDocId),
+      OrderHistoryScreen(userDocId: userDocId),
     ];
     return widgets;
   }
 
-  void _handleLoginSuccess(bool isAdmin) {
+  void _handleLoginSuccess(bool isAdmin, String documentId) {
     setState(() {
       isLoggedIn = true;
       isAdministrator = isAdmin;
-      selectedIndex =
-          isAdministrator ? 0 : 1; // Adjust based on whether the user is admin
+      userDocId = documentId; // Save the document ID
+      selectedIndex = isAdministrator ? 0 : 1;
     });
   }
 
@@ -88,9 +89,9 @@ class _HomeState extends State<Home> {
     setState(() {
       isLoggedIn = false;
       isAdministrator = false;
-      selectedIndex = 0; // Reset to the initial index, showing the login page
+      selectedIndex = 0;
+      userDocId = null; // Clear the document ID
     });
-    // Perform any additional cleanup like clearing authentication tokens here
   }
 
   @override

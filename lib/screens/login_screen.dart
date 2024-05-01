@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-typedef LoginSuccessCallback = void Function(bool isAdmin);
+typedef LoginSuccessCallback = void Function(bool isAdmin, String userDocId);
 
 class LoginPage extends StatefulWidget {
   final LoginSuccessCallback onLoginSuccess;
+  // final String? userDocId;
 
   const LoginPage({Key? key, required this.onLoginSuccess}) : super(key: key);
 
@@ -44,12 +45,16 @@ class _LoginPageState extends State<LoginPage> {
         bool loginSuccessful = false;
         for (var doc in querySnapshot.docs) {
           Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+
+          // Use password directly as the userDocId
+          String userDocId = password;
+
+          // Check if the entered password matches the stored document ID (password)
           if (data['documentId'] == password) {
-            if (searchKey == "admintiffintime") {
-              widget.onLoginSuccess(true);
-            } else {
-              widget.onLoginSuccess(false);
-            }
+            bool isAdmin = (searchKey == "admintiffintime");
+
+            // Pass isAdmin and userDocId (password) to the callback
+            widget.onLoginSuccess(isAdmin, userDocId);
 
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
               content: Text("Login Successful"),
@@ -59,6 +64,7 @@ class _LoginPageState extends State<LoginPage> {
             break;
           }
         }
+
         if (!loginSuccessful) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text("Login Failed: Incorrect password"),
@@ -138,56 +144,3 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     // Using MediaQuery to get screen size for responsive padding
-//     double screenWidth = MediaQuery.of(context).size.width;
-
-//     return Scaffold(
-//       body: Center( // Centers the login form on the screen
-//         child: SingleChildScrollView( // Allows the form to scroll
-//           padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.1), // Responsive horizontal padding
-//           child: Column(
-//             mainAxisSize: MainAxisSize.min,
-//             children: [
-//               const Text(
-//                 'Login',
-//                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-//               ),
-//               const SizedBox(height: 20),
-//               const Text(
-//                 'Please enter your login details',
-//                 style: TextStyle(fontSize: 16),
-//               ),
-//               const SizedBox(height: 40),
-//               const TextField(
-//                 decoration: InputDecoration(
-//                   labelText: 'Company Name',
-//                   border: OutlineInputBorder(),
-//                 ),
-//               ),
-//               const SizedBox(height: 20),
-//               const TextField(
-//                 obscureText: true,
-//                 decoration: InputDecoration(
-//                   labelText: 'Password',
-//                   border: OutlineInputBorder(),
-//                 ),
-//               ),
-//               const SizedBox(height: 30),
-//               ElevatedButton(
-//                 onPressed: () {}, // Dummy function for example
-//                 child: const Text('Login'),
-//                 style: ElevatedButton.styleFrom(
-//                     minimumSize: const Size(double.infinity, 50) // make the button wider
-//                 ),
-//               ),
-//             ],
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-// }
-

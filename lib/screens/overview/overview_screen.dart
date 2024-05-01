@@ -18,7 +18,9 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart' show kIsWeb; // For platform checks
 
 class OverviewScreen extends StatefulWidget {
-  const OverviewScreen({super.key});
+  final String? userDocId;
+
+  const OverviewScreen({Key? key, this.userDocId}) : super(key: key);
 
   @override
   State<OverviewScreen> createState() => _OverviewScreenState();

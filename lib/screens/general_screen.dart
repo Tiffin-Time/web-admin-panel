@@ -15,7 +15,9 @@ import 'package:image_picker_web/image_picker_web.dart';
 enum DeliveryOption { collect, collectAndDelivery }
 
 class GeneralScreen extends StatefulWidget {
-  const GeneralScreen({Key? key}) : super(key: key);
+  final String? userDocId;
+
+  const GeneralScreen({Key? key, this.userDocId}) : super(key: key);
 
   @override
   State<GeneralScreen> createState() => _GeneralScreenState();

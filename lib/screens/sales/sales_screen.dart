@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 
 class SalesScreen extends StatefulWidget {
-  const SalesScreen({super.key});
+  final String? userDocId;
+
+  const SalesScreen({Key? key, this.userDocId}) : super(key: key);
 
   @override
   State<SalesScreen> createState() => _SalesScreenState();

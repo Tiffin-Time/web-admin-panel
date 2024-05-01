@@ -9,7 +9,7 @@ class Dish {
   final String comboWithAnotherDish;
   final double comboPrice;
   final String dishImage;
-  final DateAvailability dateAvailability;
+  final Map<String, bool> dateAvailability;
 
   Dish({
     required this.name,
@@ -28,12 +28,14 @@ class Dish {
       'name': name,
       'description': description,
       'price': price,
-      'typeOfDish': typeOfDish,
+      'typeOfDish': {
+        typeOfDish: true,
+      },
       'assignTags': assignTags,
       'comboWithAnotherDish': comboWithAnotherDish,
       'comboPrice': comboPrice,
       'dishImage': dishImage,
-      'dateAvailability': dateAvailability.toString(),
+      'dateAvailability': dateAvailability,
     };
   }
 }
