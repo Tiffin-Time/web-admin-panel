@@ -8,9 +8,12 @@ import 'package:adminpanelweb/widgets/customText.dart';
 import 'package:adminpanelweb/widgets/custom_btn.dart';
 import 'package:adminpanelweb/widgets/custom_textfield.dart';
 import 'package:csv/csv.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:image_picker_web/image_picker_web.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:collection/collection.dart';
 
 enum DeliveryOption { collect, collectAndDelivery }
 
@@ -104,8 +107,107 @@ class _GeneralScreenState extends State<GeneralScreen> {
     }
   }
 
+  @override
+  void dispose() {
+    aboutUsController.dispose();
+    addressController.dispose();
+    phoneNumberController.dispose();
+    tiffinTypeController.dispose();
+    peopleController.dispose();
+    orderSpendController.dispose();
+    noticeController.dispose();
+    collectionRadiusController.dispose();
+    deliveryRadiusController.dispose();
+    deliveryChargeController.dispose();
+    minOrderSpendController.dispose();
+    daysNoticeController.dispose();
+    super.dispose();
+  }
+
   //pick image
   Uint8List? _pickedImage;
+  // Image upload function
+  Future<String> uploadImage(Uint8List data, String companyName) async {
+    String storagePath =
+        'company/images/general_information_images/$companyName/$companyName.jpg';
+
+    FirebaseStorage storage = FirebaseStorage.instance;
+    Reference ref = storage.ref().child(storagePath);
+
+    TaskSnapshot uploadTask = await ref.putData(data);
+
+    return await uploadTask.ref.getDownloadURL();
+  }
+
+  Future<void> uploadGeneralInfoToFirestore() async {
+    if (widget.userDocId == null) {
+      _showError('User document ID not provided.');
+      return;
+    }
+
+    try {
+      DocumentReference restaurantDoc = FirebaseFirestore.instance
+          .collection('Restaurants')
+          .doc(widget.userDocId);
+
+      DocumentSnapshot docSnapshot = await restaurantDoc.get();
+      if (!docSnapshot.exists) {
+        _showError('Restaurant not found.');
+        return;
+      }
+
+      String companyName = docSnapshot['name'];
+      if (companyName.isEmpty) {
+        _showError('Company name not found.');
+        return;
+      }
+
+      // Upload image and get URL
+      String imageUrl = '';
+      if (_pickedImage != null) {
+        imageUrl = await uploadImage(_pickedImage!, companyName);
+      }
+
+      // Pair daysOfWeek and isSelected using indices
+      List<String> daysOpen = [];
+      for (int i = 0; i < daysOfWeek.length; i++) {
+        if (isSelected[i]) {
+          daysOpen.add(daysOfWeek[i]);
+        }
+      }
+
+      Map<String, dynamic> generalInfo = {
+        'aboutUs': aboutUsController.text,
+        'address': addressController.text,
+        'phoneNumber': phoneNumberController.text,
+        'imageUrl': imageUrl,
+        'daysOpen': daysOpen,
+        'tiffinType': dropdownValue,
+        'collectionRadius': collectionRadiusController.text,
+        'deliveryRadius': deliveryRadiusController.text,
+        'deliveryCharge': deliveryChargeController.text,
+        'minOrderSpend': minOrderSpendController.text,
+        'daysNotice': daysNoticeController.text,
+        'collectionTimes':
+            collectionTimes.map((k, v) => MapEntry(k, v?.format(context))),
+        'deliveryTimes':
+            deliveryTimes.map((k, v) => MapEntry(k, v?.format(context))),
+        'maxPeoplePerHour': maxPeoplePerHour,
+      };
+
+      await restaurantDoc
+          .set({'generalInformation': generalInfo}, SetOptions(merge: true));
+
+      // await restaurantDoc.update({'generalInformation': generalInfo});
+
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text("General information uploaded successfully"),
+        backgroundColor: Colors.green,
+      ));
+    } catch (e) {
+      _showError('Error uploading general information: $e');
+    }
+  }
 
   void _pickImage() {
     final InputElement input = document.createElement('input') as InputElement;
@@ -130,21 +232,10 @@ class _GeneralScreenState extends State<GeneralScreen> {
     input.click();
   }
 
-  @override
-  void dispose() {
-    aboutUsController.dispose();
-    addressController.dispose();
-    phoneNumberController.dispose();
-    tiffinTypeController.dispose();
-    peopleController.dispose();
-    orderSpendController.dispose();
-    noticeController.dispose();
-    collectionRadiusController.dispose();
-    deliveryRadiusController.dispose();
-    deliveryChargeController.dispose();
-    minOrderSpendController.dispose();
-    daysNoticeController.dispose();
-    super.dispose();
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
   }
 
   @override
@@ -603,7 +694,7 @@ class _GeneralScreenState extends State<GeneralScreen> {
                   alignment: Alignment.centerLeft,
                   child: CustomButton(
                     text: 'Save Changes',
-                    onPressed: downloadCSV,
+                    onPressed: uploadGeneralInfoToFirestore,
                     width: 140,
                     color: lightBlue,
                   ),
@@ -674,8 +765,4 @@ class _GeneralScreenState extends State<GeneralScreen> {
     html.document.body!.children.remove(anchor);
     html.Url.revokeObjectUrl(url);
   }
-
-//
-//
-//
 }

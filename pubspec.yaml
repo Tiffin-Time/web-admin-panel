@@ -47,6 +47,7 @@ dependencies:
   cloud_firestore: ^4.15.4
   firebase_storage: ^11.6.9
   flutter_background: ^1.2.0
+  collection: ^1.18.0
 
 dev_dependencies:
   flutter_test:

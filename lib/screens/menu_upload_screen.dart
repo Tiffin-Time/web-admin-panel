@@ -37,7 +37,6 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
   Image? _displayImage;
   html.File? selectedFile;
   Uint8List? _selectedImageData;
-  String? _uploadedImageUrl;
 
   List<String> options = [
     'Vegetarian',
@@ -200,36 +199,76 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
     );
   }
 
-  Future<String> uploadImage(html.File file) async {
-    final reader = html.FileReader();
-    reader.readAsArrayBuffer(file);
-    await reader.onLoad.first;
-    final Uint8List data = reader.result as Uint8List;
+  Future<String> uploadImage(
+      Uint8List data, String searchKey, String dishName) async {
+    // Sanitize the dish name for use in a URL
+    final sanitizedDishName = dishName.replaceAll(RegExp(r'\W+'), '_');
 
-    String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+    // Construct the storage path
     String storagePath =
-        'company/images/dish_images/${widget.userDocId}/$fileName';
+        'company/images/dish_images/$searchKey/${DateTime.now().millisecondsSinceEpoch}/$sanitizedDishName.jpg';
 
     FirebaseStorage storage = FirebaseStorage.instance;
     Reference ref = storage.ref().child(storagePath);
+
+    // Upload the image
     TaskSnapshot uploadTask = await ref.putData(data);
+
+    // Return the download URL
     return await uploadTask.ref.getDownloadURL();
   }
 
-// Adds a dish to the Firestore database
-  void addDish(String downloadUrl) {
-    Dish dish = Dish(
-      name: dishNameController.text,
-      description: dishDescriptionController.text,
-      price: double.parse(dishPriceController.text),
-      typeOfDish: dishTypeValue,
-      assignTags: getSelectedTags(),
-      comboWithAnotherDish: combowithAnotherDishValue,
-      comboPrice: double.parse(dishComboPriceController.text),
-      dishImage: downloadUrl,
-      dateAvailability: getAvailabilityMap(_dateAvailability, isSelected),
-    );
-    addDishToLocalList(dish); // Add to local preview list
+  Future<void> uploadDishesToFirestore() async {
+    if (widget.userDocId == null) {
+      _showError('User document ID not provided.');
+      return;
+    }
+
+    try {
+      // Get restaurant document reference
+      DocumentReference restaurantDoc = FirebaseFirestore.instance
+          .collection('Restaurants')
+          .doc(widget.userDocId);
+
+      // Get the restaurant document
+      DocumentSnapshot docSnapshot = await restaurantDoc.get();
+      if (!docSnapshot.exists) {
+        _showError('Restaurant not found.');
+        return;
+      }
+
+      // Extract the searchKey from the restaurant data
+      String searchKey = docSnapshot['searchKey'];
+      if (searchKey.isEmpty) {
+        _showError('searchKey not found.');
+        return;
+      }
+
+      // Prepare the data structure for Firestore
+      Map<String, Map<String, dynamic>> dishMaps = {};
+
+      for (Dish dish in dishes) {
+        // Upload each dish's image to Firebase Storage and get the download URL
+        String imageUrl =
+            await uploadImage(_selectedImageData!, searchKey, dish.name);
+
+        // Use the imageUrl and update the dishImage in the map
+        dishMaps[dish.name] = dish.toFirestoreMap()..['dishImage'] = imageUrl;
+      }
+
+      // Update the Firestore document
+      await restaurantDoc.update({'dishes': dishMaps});
+
+      setState(() {
+        dishes.clear(); // Clear local dishes after uploading
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text("Dishes uploaded successfully"),
+          backgroundColor: Colors.green));
+    } catch (e) {
+      _showError('Error uploading dishes: $e');
+    }
   }
 
   void _handleFileReadError(dynamic error) {
@@ -237,30 +276,30 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
     print('Error reading file: $error');
   }
 
-  void _readImageFile(html.File file) {
-    final reader = html.FileReader();
+//   void _readImageFile(html.File file) {
+//     final reader = html.FileReader();
 
-    reader.onError.listen(_handleFileReadError);
+//     reader.onError.listen(_handleFileReadError);
 
-    try {
-      reader.readAsArrayBuffer(file);
-      reader.onLoad.listen((event) {
-        if (reader.result != null) {
-          final Uint8List data = reader.result as Uint8List;
-          // Proceed with the image data
-        } else {
-          throw Exception('Failed to read file data');
-        }
-      });
-    } catch (e) {
-      _handleFileReadError(e);
-    }
-    // Log image size and type
-    print('File size: ${file.size}');
-    print('File type: ${file.type}');
+//     try {
+//       reader.readAsArrayBuffer(file);
+//       reader.onLoad.listen((event) {
+//         if (reader.result != null) {
+//           final Uint8List data = reader.result as Uint8List;
+//           // Proceed with the image data
+//         } else {
+//           throw Exception('Failed to read file data');
+//         }
+//       });
+//     } catch (e) {
+//       _handleFileReadError(e);
+//     }
+//     // Log image size and type
+//     print('File size: ${file.size}');
+//     print('File type: ${file.type}');
 
-// Add further logging to inspect data in other parts of your process
-  }
+// // Add further logging to inspect data in other parts of your process
+//   }
 
   void _pickImage() {
     final html.FileUploadInputElement input = html.FileUploadInputElement()
@@ -320,11 +359,11 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
     );
   }
 
-  void addDishToLocalList(Dish dish) {
-    setState(() {
-      dishes.add(dish);
-    });
-  }
+  // void addDishToLocalList(Dish dish) {
+  //   setState(() {
+  //     dishes.add(dish);
+  //   });
+  // }
 
   void _addDishLocally() {
     if (dishNameController.text.isEmpty ||
@@ -359,40 +398,6 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
     dishPriceController.clear();
     dishComboPriceController.clear();
     selectedFile = null;
-  }
-
-  Future<void> uploadDishesToFirestore() async {
-    // Proceed with uploading the dishes
-    if (widget.userDocId == null) {
-      print('No user document ID provided');
-      return;
-    }
-
-    DocumentReference restaurantDoc = FirebaseFirestore.instance
-        .collection('Restaurants')
-        .doc(widget.userDocId);
-
-    // Check if the document exists
-    DocumentSnapshot docSnapshot = await restaurantDoc.get();
-    if (!docSnapshot.exists) {
-      // Create the document with the basic structure if it doesn't exist
-      await restaurantDoc.set({});
-    }
-
-    // Prepare the data structure for Firestore
-    Map<String, Map<String, dynamic>> dishMaps = {
-      for (Dish dish in dishes) dish.name: dish.toFirestoreMap()
-    };
-
-    // Update the document with the dishes data
-    await restaurantDoc.update({'dishes': dishMaps});
-
-    print('Updating restaurant with ID: ${widget.userDocId}');
-
-    // Clear the local dishes list after uploading
-    setState(() {
-      dishes.clear();
-    });
   }
 
   @override
