@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:html' as html;
 import 'dart:html';
 import 'dart:typed_data';
+import 'package:intl/intl.dart';
 
 import 'package:adminpanelweb/consts/colors.dart';
 import 'package:adminpanelweb/widgets/customText.dart';
@@ -127,9 +128,13 @@ class _GeneralScreenState extends State<GeneralScreen> {
   //pick image
   Uint8List? _pickedImage;
   // Image upload function
-  Future<String> uploadImage(Uint8List data, String companyName) async {
+  Future<String> uploadImage(
+      Uint8List data, String companyName, String searchKey) async {
+    String currentDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
+
+    final sanitizedCompanyName = companyName.replaceAll(RegExp(r'\W+'), '_');
     String storagePath =
-        'company/images/general_information_images/$companyName/$companyName.jpg';
+        'company/images/general_information_images/$searchKey/$currentDate/$sanitizedCompanyName.jpg';
 
     FirebaseStorage storage = FirebaseStorage.instance;
     Reference ref = storage.ref().child(storagePath);
@@ -156,16 +161,23 @@ class _GeneralScreenState extends State<GeneralScreen> {
         return;
       }
 
-      String companyName = docSnapshot['name'];
+      String companyName = docSnapshot['companyName'];
       if (companyName.isEmpty) {
         _showError('Company name not found.');
+        return;
+      }
+
+      // Extract the searchKey from the restaurant data
+      String searchKey = docSnapshot['searchKey'];
+      if (searchKey.isEmpty) {
+        _showError('searchKey not found.');
         return;
       }
 
       // Upload image and get URL
       String imageUrl = '';
       if (_pickedImage != null) {
-        imageUrl = await uploadImage(_pickedImage!, companyName);
+        imageUrl = await uploadImage(_pickedImage!, companyName, searchKey);
       }
 
       // Pair daysOfWeek and isSelected using indices

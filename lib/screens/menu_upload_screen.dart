@@ -3,6 +3,7 @@ import 'dart:html' as html;
 import 'dart:html';
 import 'dart:typed_data';
 import 'package:csv/csv.dart';
+import 'package:intl/intl.dart';
 
 import 'package:adminpanelweb/consts/colors.dart';
 import 'package:adminpanelweb/models/dish.dart';
@@ -201,12 +202,13 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
 
   Future<String> uploadImage(
       Uint8List data, String searchKey, String dishName) async {
+    String currentDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
     // Sanitize the dish name for use in a URL
     final sanitizedDishName = dishName.replaceAll(RegExp(r'\W+'), '_');
 
     // Construct the storage path
     String storagePath =
-        'company/images/dish_images/$searchKey/${DateTime.now().millisecondsSinceEpoch}/$sanitizedDishName.jpg';
+        'company/images/dish_images/$searchKey/$currentDate/$sanitizedDishName.jpg';
 
     FirebaseStorage storage = FirebaseStorage.instance;
     Reference ref = storage.ref().child(storagePath);
@@ -276,31 +278,6 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
     print('Error reading file: $error');
   }
 
-//   void _readImageFile(html.File file) {
-//     final reader = html.FileReader();
-
-//     reader.onError.listen(_handleFileReadError);
-
-//     try {
-//       reader.readAsArrayBuffer(file);
-//       reader.onLoad.listen((event) {
-//         if (reader.result != null) {
-//           final Uint8List data = reader.result as Uint8List;
-//           // Proceed with the image data
-//         } else {
-//           throw Exception('Failed to read file data');
-//         }
-//       });
-//     } catch (e) {
-//       _handleFileReadError(e);
-//     }
-//     // Log image size and type
-//     print('File size: ${file.size}');
-//     print('File type: ${file.type}');
-
-// // Add further logging to inspect data in other parts of your process
-//   }
-
   void _pickImage() {
     final html.FileUploadInputElement input = html.FileUploadInputElement()
       ..accept = 'image/*';
@@ -358,12 +335,6 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
       SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
   }
-
-  // void addDishToLocalList(Dish dish) {
-  //   setState(() {
-  //     dishes.add(dish);
-  //   });
-  // }
 
   void _addDishLocally() {
     if (dishNameController.text.isEmpty ||
@@ -474,10 +445,6 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
                 Container(
                   decoration: BoxDecoration(
                     color: lightBlue2,
-                    // border: Border.all(
-                    //   color: blackColor,
-                    //   width: 1,
-                    // ),
                     borderRadius: BorderRadius.circular(30),
                   ),
                   padding:
