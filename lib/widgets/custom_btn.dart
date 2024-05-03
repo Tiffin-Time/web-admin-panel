@@ -1,5 +1,5 @@
 import 'package:adminpanelweb/consts/colors.dart';
-import 'package:adminpanelweb/widgets/customText.dart';
+import 'package:adminpanelweb/widgets/custom_text.dart';
 import 'package:flutter/material.dart';
 
 class CustomButton extends StatelessWidget {

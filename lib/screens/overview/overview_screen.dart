@@ -1,5 +1,7 @@
+// ignore_for_file: avoid_web_libraries_in_flutter
+
 import 'package:adminpanelweb/consts/colors.dart';
-import 'package:adminpanelweb/widgets/customText.dart';
+import 'package:adminpanelweb/widgets/custom_text.dart';
 import 'package:adminpanelweb/widgets/custom_btn.dart';
 import 'package:adminpanelweb/widgets/custom_textfield.dart';
 import 'package:file_picker/file_picker.dart';
@@ -8,9 +10,12 @@ import 'package:gap/gap.dart';
 
 import 'dart:convert';
 import 'dart:html' as html;
+// import 'dart:html';
+// import 'dart:typed_data';
 import 'package:csv/csv.dart';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:path/path.dart' as path;
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart' show kIsWeb; // For platform checks
 
@@ -457,7 +462,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
   }
 
 // Similar changes should be made for uploadFoodSafetyCertificate
-
+// This method also allows multiple selections
   Future<void> uploadFoodSafetyCertificate() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
