@@ -1,5 +1,5 @@
 import 'package:adminpanelweb/consts/colors.dart';
-import 'package:adminpanelweb/widgets/customText.dart';
+import 'package:adminpanelweb/widgets/custom_text.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 
@@ -21,14 +21,14 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
           body: SafeArea(
               child: SingleChildScrollView(
         child: Container(
-          margin: EdgeInsets.symmetric(horizontal: 50, vertical: 80),
+          margin: const EdgeInsets.symmetric(horizontal: 50, vertical: 80),
           child: Column(
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Container(
-                    padding: EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       border: Border.all(color: greyColor),
                       borderRadius: BorderRadius.circular(20),
@@ -41,8 +41,8 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                           fontWeight: FontWeight.bold,
                           textColor: blackColor.withOpacity(0.8),
                         ),
-                        Gap(20),
-                        CustomText(
+                        const Gap(20),
+                        const CustomText(
                           size: 20,
                           text: '51',
                           fontWeight: FontWeight.bold,
@@ -51,9 +51,9 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                       ],
                     ),
                   ),
-                  Gap(10),
+                  const Gap(10),
                   Container(
-                    padding: EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       border: Border.all(color: greyColor),
                       borderRadius: BorderRadius.circular(20),
@@ -66,8 +66,8 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                           fontWeight: FontWeight.bold,
                           textColor: blackColor.withOpacity(0.8),
                         ),
-                        Gap(20),
-                        CustomText(
+                        const Gap(20),
+                        const CustomText(
                           size: 20,
                           text: '\$1280',
                           fontWeight: FontWeight.bold,
@@ -78,14 +78,14 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                   ),
                 ],
               ),
-              Gap(30),
-              TabBar(
+              const Gap(30),
+              const TabBar(
                 tabs: [
                   Tab(text: 'Weekly'),
                   Tab(text: 'Monthly'),
                 ],
               ),
-              Container(
+              SizedBox(
                 height: 500, // Adjust this value as needed
                 child: TabBarView(
                   children: [
@@ -105,7 +105,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
 class DataListView extends StatelessWidget {
   final List<Map<String, dynamic>> dataList;
 
-  DataListView({required this.dataList});
+  const DataListView({super.key, required this.dataList});
 
   @override
   Widget build(BuildContext context) {

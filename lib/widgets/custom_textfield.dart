@@ -38,15 +38,15 @@ class CustomTextField extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(vertical: 4, horizontal: 20),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(borderRadius),
-          borderSide: BorderSide(color: blackColor),
+          borderSide: const BorderSide(color: blackColor),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(borderRadius),
-          borderSide: BorderSide(color: blackColor),
+          borderSide: const BorderSide(color: blackColor),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(borderRadius),
-          borderSide: BorderSide(color: blackColor),
+          borderSide: const BorderSide(color: blackColor),
         ),
         hintStyle: TextStyle(
           color: blackColor.withOpacity(0.5),

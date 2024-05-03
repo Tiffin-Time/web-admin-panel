@@ -5,7 +5,6 @@ import 'package:adminpanelweb/screens/menu_upload_screen.dart';
 import 'package:adminpanelweb/screens/order%20history/order_history_screen.dart';
 import 'package:adminpanelweb/screens/overview/overview_screen.dart';
 import 'package:adminpanelweb/screens/sales/sales_screen.dart';
-import 'package:adminpanelweb/widgets/customText.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:adminpanelweb/firebase_options.dart';
@@ -146,7 +145,7 @@ class _HomeState extends State<Home> {
                   if (isLoggedIn) // Only show logout button if logged in
                     ListTile(
                       title:
-                          Text('Logout', style: TextStyle(color: Colors.red)),
+                          const Text('Logout', style: TextStyle(color: Colors.red)),
                       onTap: _logout,
                     ),
                 ],

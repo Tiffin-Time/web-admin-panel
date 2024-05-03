@@ -1,5 +1,5 @@
 import 'package:adminpanelweb/consts/colors.dart';
-import 'package:adminpanelweb/widgets/customText.dart';
+import 'package:adminpanelweb/widgets/custom_text.dart';
 import 'package:adminpanelweb/widgets/custom_btn.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
@@ -15,7 +15,8 @@ class CalendarItemView extends StatelessWidget {
           child: Stack(
             children: [
               Container(
-                margin: EdgeInsets.symmetric(horizontal: 50, vertical: 80),
+                margin:
+                    const EdgeInsets.symmetric(horizontal: 50, vertical: 80),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
@@ -48,7 +49,7 @@ class CalendarItemView extends StatelessWidget {
                       text: 'Set as Completed',
                       onPressed: () {},
                       width: 140,
-                      color: Color.fromARGB(255, 8, 236, 38),
+                      color: const Color.fromARGB(255, 8, 236, 38),
                     ),
                     const Gap(30),
                     Divider(
@@ -91,7 +92,7 @@ class CalendarItemView extends StatelessWidget {
                         ),
                       ],
                     ),
-                    Gap(15),
+                    const Gap(15),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
@@ -127,7 +128,7 @@ class CalendarItemView extends StatelessWidget {
                         ),
                       ],
                     ),
-                    Gap(30),
+                    const Gap(30),
                   ],
                 ),
               ),
@@ -135,7 +136,7 @@ class CalendarItemView extends StatelessWidget {
                 top: 10,
                 left: 10,
                 child: IconButton(
-                  icon: Icon(Icons.arrow_back),
+                  icon: const Icon(Icons.arrow_back),
                   onPressed: () {
                     Navigator.pop(context);
                   },

@@ -1,4 +1,4 @@
-import 'package:adminpanelweb/widgets/customText.dart';
+import 'package:adminpanelweb/widgets/custom_text.dart';
 import 'package:adminpanelweb/widgets/custom_btn.dart';
 import 'package:flutter/material.dart';
 
@@ -21,7 +21,7 @@ Future uploadedDishValidateErrorDialog(BuildContext context) {
                   fontWeight: FontWeight.w600,
                   text:
                       "All fields are required including the image. Please fill all fields and try again."),
-              SizedBox(height: 20.0),
+              const SizedBox(height: 20.0),
               CustomButton(
                   onPressed: () {
                     Navigator.pop(context);
@@ -50,9 +50,9 @@ Future dishSuccessfullyAddedDialog(BuildContext context) {
         child: Container(
           width: 500.00,
           padding: const EdgeInsets.all(20.0),
-          child: Column(
+          child: const Column(
             mainAxisSize: MainAxisSize.min,
-            children: const [
+            children: [
               Image(
                 image: NetworkImage('https://i.ibb.co/HYD1Bkv/6459980.png'),
                 height: 100,

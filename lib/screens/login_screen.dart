@@ -44,7 +44,7 @@ class _LoginPageState extends State<LoginPage> {
       if (querySnapshot.docs.isNotEmpty) {
         bool loginSuccessful = false;
         for (var doc in querySnapshot.docs) {
-          Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+          Map<String, dynamic> data = doc.data();
 
           // Use password directly as the userDocId
           String userDocId = password;
@@ -128,7 +128,6 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 30),
               ElevatedButton(
                 onPressed: _login,
-                child: const Text('Login'),
                 style: ElevatedButton.styleFrom(
                   foregroundColor: Colors.white,
                   backgroundColor: Colors.blueAccent,
@@ -136,6 +135,7 @@ class _LoginPageState extends State<LoginPage> {
                       const Size(double.infinity, 50), // Set the text color
                   textStyle: const TextStyle(fontSize: 18),
                 ),
+                child: const Text('Login'),
               ),
             ],
           ),

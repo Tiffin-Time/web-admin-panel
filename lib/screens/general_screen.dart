@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_web_libraries_in_flutter
+
 import 'dart:convert';
 import 'dart:html' as html;
 import 'dart:html';
@@ -5,16 +7,14 @@ import 'dart:typed_data';
 import 'package:intl/intl.dart';
 
 import 'package:adminpanelweb/consts/colors.dart';
-import 'package:adminpanelweb/widgets/customText.dart';
+import 'package:adminpanelweb/widgets/custom_text.dart';
 import 'package:adminpanelweb/widgets/custom_btn.dart';
 import 'package:adminpanelweb/widgets/custom_textfield.dart';
 import 'package:csv/csv.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-import 'package:image_picker_web/image_picker_web.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:collection/collection.dart';
 
 enum DeliveryOption { collect, collectAndDelivery }
 

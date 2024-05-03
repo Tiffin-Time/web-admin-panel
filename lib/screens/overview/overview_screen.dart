@@ -8,12 +8,9 @@ import 'package:gap/gap.dart';
 
 import 'dart:convert';
 import 'dart:html' as html;
-import 'dart:html';
-import 'dart:typed_data';
 import 'package:csv/csv.dart';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:path/path.dart' as path;
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart' show kIsWeb; // For platform checks
 
@@ -151,7 +148,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
                                     Text(_selectedFile!.name),
                                   ],
                                 ),
-                                Gap(20),
+                                const Gap(20),
                               ],
                             ),
                           GestureDetector(
@@ -185,8 +182,8 @@ class _OverviewScreenState extends State<OverviewScreen> {
                                 children: [
                                   Row(
                                     children: <Widget>[
-                                      Icon(Icons.picture_as_pdf),
-                                      SizedBox(width: 8),
+                                      const Icon(Icons.picture_as_pdf),
+                                      const SizedBox(width: 8),
                                       Text(file.name),
                                     ],
                                   ),

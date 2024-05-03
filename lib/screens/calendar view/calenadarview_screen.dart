@@ -1,8 +1,7 @@
 import 'package:adminpanelweb/consts/colors.dart';
 import 'package:adminpanelweb/screens/calendar%20view/calendar_item_view.dart';
-import 'package:adminpanelweb/widgets/customText.dart';
+import 'package:adminpanelweb/widgets/custom_text.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:gap/gap.dart';
 
 import 'package:google_fonts/google_fonts.dart';
@@ -24,7 +23,7 @@ class _ViewSchedulePageState extends State<ViewSchedulePage> {
         width: MediaQuery.of(context).size.width,
         height: MediaQuery.of(context).size.height,
         child: Container(
-          margin: EdgeInsets.symmetric(horizontal: 50, vertical: 80),
+          margin: const EdgeInsets.symmetric(horizontal: 50, vertical: 80),
           child: const SafeArea(
             child: ViewSheduleWidget(),
           ),
@@ -139,7 +138,7 @@ class _ViewSheduleWidgetState extends State<ViewSheduleWidget> {
                               height: 32,
                               width: 32,
                               decoration: const BoxDecoration(
-                                color: const Color.fromARGB(255, 0, 117, 250),
+                                color: Color.fromARGB(255, 0, 117, 250),
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -225,13 +224,13 @@ class _Header extends StatelessWidget {
                   value: selectedMonth,
                   isExpanded: false,
                   style: GoogleFonts.lato(
-                    textStyle: TextStyle(
+                    textStyle: const TextStyle(
                       color: blackColor,
                       fontSize: 18,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  icon: Icon(Icons.arrow_drop_down_sharp),
+                  icon: const Icon(Icons.arrow_drop_down_sharp),
                   onChanged: (value) => onChange(value!),
                   items: dropdownItems,
                 ),
@@ -398,7 +397,7 @@ class _RowItem extends StatelessWidget {
       },
       behavior: HitTestBehavior.opaque,
       child: Container(
-        margin: EdgeInsets.symmetric(vertical: 10),
+        margin: const EdgeInsets.symmetric(vertical: 10),
         alignment: Alignment.center,
         height: 40,
         decoration: isActiveMonth ? boxDecoration : null,
@@ -424,7 +423,7 @@ class _RowItem extends StatelessWidget {
           },
           child: CustomText(
               size: 25,
-              text: '$number',
+              text: number,
               textColor: (isActiveMonth
                   ? isPassed
                       ? isToday

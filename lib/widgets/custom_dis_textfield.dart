@@ -38,15 +38,15 @@ class CustomDisTextField extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(vertical: 4, horizontal: 20),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(borderRadius),
-          borderSide: BorderSide(color: blackColor),
+          borderSide: const BorderSide(color: blackColor),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(borderRadius),
-          borderSide: BorderSide(color: blackColor),
+          borderSide: const BorderSide(color: blackColor),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(borderRadius),
-          borderSide: BorderSide(color: blackColor),
+          borderSide: const BorderSide(color: blackColor),
         ),
         hintStyle: TextStyle(
           color: blackColor.withOpacity(0.5),
@@ -54,8 +54,8 @@ class CustomDisTextField extends StatelessWidget {
           fontWeight: FontWeight.w300,
         ),
         hintText: labelText,
-        suffixIcon: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 5),
+        suffixIcon: const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 5),
           child: Text(
             "%",
             style: TextStyle(

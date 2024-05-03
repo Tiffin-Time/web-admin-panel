@@ -1,6 +1,7 @@
+// ignore_for_file: avoid_web_libraries_in_flutter
+
 import 'dart:convert';
 import 'dart:html' as html;
-import 'dart:html';
 import 'dart:typed_data';
 import 'package:csv/csv.dart';
 import 'package:intl/intl.dart';
@@ -8,10 +9,9 @@ import 'package:intl/intl.dart';
 import 'package:adminpanelweb/consts/colors.dart';
 import 'package:adminpanelweb/models/dish.dart';
 import 'package:adminpanelweb/models/offer.dart';
-import 'package:adminpanelweb/widgets/customText.dart';
+import 'package:adminpanelweb/widgets/custom_text.dart';
 import 'package:adminpanelweb/widgets/custom_btn.dart';
 import 'package:adminpanelweb/widgets/custom_dis_textfield.dart';
-import 'package:adminpanelweb/widgets/custom_showDialog.dart';
 import 'package:adminpanelweb/widgets/custom_textfield.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -184,7 +184,7 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
                   textColor: blackColor,
                 ),
                 IconButton(
-                  icon: Icon(Icons.delete),
+                  icon: const Icon(Icons.delete),
                   onPressed: () {
                     // Delete the item from the list
                     setState(() {
@@ -391,10 +391,10 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
                     child: _displayImage,
                   )
                 else
-                  Container(
+                  const SizedBox(
                     height: 100,
                     width: 100,
-                    child: const Icon(Icons.image_not_supported),
+                    child: Icon(Icons.image_not_supported),
                   ),
                 const CustomText(
                     size: 23,
@@ -562,7 +562,7 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
                                     fontWeight: FontWeight.w500,
                                     textColor: blackColor),
                                 const Gap(5),
-                                Container(
+                                SizedBox(
                                   height: 250,
                                   child: ListView.builder(
                                     itemCount: options.length,
@@ -636,7 +636,7 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
                                     align: TextAlign.start,
                                     fontWeight: FontWeight.w500,
                                     textColor: blackColor),
-                                Gap(5),
+                                const Gap(5),
                                 CustomTextField(
                                   labelText: 'Price of the Combo in INR',
                                   controller: dishComboPriceController,
@@ -996,7 +996,7 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
             borderRadius: BorderRadius.circular(30.0),
           ),
           child: Container(
-            padding: EdgeInsets.all(20.0),
+            padding: const EdgeInsets.all(20.0),
             width: 600,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

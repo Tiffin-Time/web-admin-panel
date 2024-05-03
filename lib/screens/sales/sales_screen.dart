@@ -1,5 +1,5 @@
 import 'package:adminpanelweb/consts/colors.dart';
-import 'package:adminpanelweb/widgets/customText.dart';
+import 'package:adminpanelweb/widgets/custom_text.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 
@@ -28,7 +28,7 @@ class _SalesScreenState extends State<SalesScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Container(
-                    padding: EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       border: Border.all(color: greyColor),
                       borderRadius: BorderRadius.circular(20),
@@ -41,8 +41,8 @@ class _SalesScreenState extends State<SalesScreen> {
                           fontWeight: FontWeight.bold,
                           textColor: blackColor.withOpacity(0.8),
                         ),
-                        Gap(20),
-                        CustomText(
+                        const Gap(20),
+                        const CustomText(
                           size: 20,
                           text: '#Number',
                           fontWeight: FontWeight.bold,
@@ -51,9 +51,9 @@ class _SalesScreenState extends State<SalesScreen> {
                       ],
                     ),
                   ),
-                  Gap(10),
+                  const Gap(10),
                   Container(
-                    padding: EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       border: Border.all(color: greyColor),
                       borderRadius: BorderRadius.circular(20),
@@ -66,8 +66,8 @@ class _SalesScreenState extends State<SalesScreen> {
                           fontWeight: FontWeight.bold,
                           textColor: blackColor.withOpacity(0.8),
                         ),
-                        Gap(20),
-                        CustomText(
+                        const Gap(20),
+                        const CustomText(
                           size: 20,
                           text: '#Number',
                           fontWeight: FontWeight.bold,
