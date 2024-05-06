@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'dart:html' as html;
 import 'dart:typed_data';
 import 'package:csv/csv.dart';
-import 'package:intl/intl.dart';
+// import 'package:intl/intl.dart';
 
 import 'package:adminpanelweb/consts/colors.dart';
 import 'package:adminpanelweb/models/dish.dart';
@@ -39,6 +39,22 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
   html.File? selectedFile;
   Uint8List? _selectedImageData;
 
+  final List<String> allergens = [
+    'Peanuts',
+    'Dairy',
+    'Gluten',
+    'Shellfish',
+    'Soy'
+  ];
+
+  final Map<String, bool> selectedAllergens = {
+    'Peanuts': false,
+    'Dairy': false,
+    'Gluten': false,
+    'Shellfish': false,
+    'Soy': false,
+  };
+
   List<String> options = [
     'Vegetarian',
     'Vegan',
@@ -70,6 +86,8 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
 
   TextEditingController includeWithMainDetailController =
       TextEditingController();
+
+  TextEditingController allergenController = TextEditingController();
 
   @override
   void dispose() {
@@ -202,13 +220,13 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
 
   Future<String> uploadImage(
       Uint8List data, String searchKey, String dishName) async {
-    String currentDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
+    // String currentDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
     // Sanitize the dish name for use in a URL
     final sanitizedDishName = dishName.replaceAll(RegExp(r'\W+'), '_');
 
     // Construct the storage path
     String storagePath =
-        'company/images/dish_images/$searchKey/$currentDate/$sanitizedDishName.jpg';
+        'company/images/dish_images/$searchKey/$sanitizedDishName.jpg';
 
     FirebaseStorage storage = FirebaseStorage.instance;
     Reference ref = storage.ref().child(storagePath);
@@ -346,6 +364,11 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
       return;
     }
 
+    final selectedAllergenList = selectedAllergens.entries
+        .where((entry) => entry.value)
+        .map((entry) => entry.key)
+        .toList();
+
     final dish = Dish(
       name: dishNameController.text,
       description: dishDescriptionController.text,
@@ -357,6 +380,7 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
       dishImage: base64Encode(
           _selectedImageData!), // Use encoded image for local preview
       dateAvailability: getAvailabilityMap(_dateAvailability, isSelected),
+      allergens: selectedAllergenList, // Include the allergen data
     );
 
     setState(() {
@@ -369,6 +393,7 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
     dishPriceController.clear();
     dishComboPriceController.clear();
     selectedFile = null;
+    selectedAllergens.updateAll((key, value) => false);
   }
 
   @override
@@ -382,20 +407,6 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Check if _displayImage is not null and display it
-                if (_displayImage != null)
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    height: 100,
-                    width: 100,
-                    child: _displayImage,
-                  )
-                else
-                  const SizedBox(
-                    height: 100,
-                    width: 100,
-                    child: Icon(Icons.image_not_supported),
-                  ),
                 const CustomText(
                     size: 23,
                     text: "Menu Upload",
@@ -416,6 +427,8 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
                   fontWeight: FontWeight.bold,
                   textColor: blackColor,
                 ),
+
+                // Add dish image under 'Upload a Dish'
                 dishes.isNotEmpty
                     ? Column(
                         mainAxisAlignment: MainAxisAlignment.start,
@@ -719,6 +732,29 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
                                 const Gap(5),
                                 buildOptionforDateAvail(
                                     'Every Day', DateAvailability.everyDay),
+                                const Gap(20),
+                                const CustomText(
+                                  size: 16,
+                                  text: "Allergens",
+                                  align: TextAlign.start,
+                                  fontWeight: FontWeight.w500,
+                                  textColor: blackColor,
+                                ),
+                                const Gap(5),
+                                Column(
+                                  children: allergens.map((allergen) {
+                                    return CheckboxListTile(
+                                      title: Text(allergen),
+                                      value: selectedAllergens[allergen],
+                                      onChanged: (bool? value) {
+                                        setState(() {
+                                          selectedAllergens[allergen] = value!;
+                                        });
+                                      },
+                                    );
+                                  }).toList(),
+                                ),
+                                const Gap(20),
                               ],
                             ),
                           ),
@@ -731,18 +767,19 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
                         width: 140,
                         color: lightBlue,
                       ),
-                      ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: dishes.length,
-                        itemBuilder: (context, index) {
-                          Dish dish = dishes[index];
-                          return ListTile(
-                            title: Text(dish.name),
-                            subtitle: Text(dish.description),
-                            leading: Image.memory(base64Decode(dish.dishImage)),
-                          );
-                        },
-                      ),
+                      // Add dish image under 'Add a Dish'
+                      // ListView.builder(
+                      //   shrinkWrap: true,
+                      //   itemCount: dishes.length,
+                      //   itemBuilder: (context, index) {
+                      //     Dish dish = dishes[index];
+                      //     return ListTile(
+                      //       title: Text(dish.name),
+                      //       subtitle: Text(dish.description),
+                      //       leading: Image.memory(base64Decode(dish.dishImage)),
+                      //     );
+                      //   },
+                      // ),
                     ],
                   ),
                 ),

@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'dart:html' as html;
 import 'dart:html';
 import 'dart:typed_data';
-import 'package:intl/intl.dart';
+// import 'package:intl/intl.dart';
 
 import 'package:adminpanelweb/consts/colors.dart';
 import 'package:adminpanelweb/widgets/custom_text.dart';
@@ -31,7 +31,7 @@ class _GeneralScreenState extends State<GeneralScreen> {
   DeliveryOption _deliveryOption = DeliveryOption.collect;
   List<bool> isSelected = List.generate(7, (_) => false);
   TimeOfDay selectedTime = TimeOfDay.now();
-  String dropdownValue = 'Option 1';
+  String dropdownValue = 'Tiffin-Veg';
 
   final TextEditingController aboutUsController = TextEditingController();
   final TextEditingController addressController = TextEditingController();
@@ -78,13 +78,13 @@ class _GeneralScreenState extends State<GeneralScreen> {
   }
 
   final List<String> daysOfWeek = [
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
-    'Sunday',
+    'Mon',
+    'Tue',
+    'Wed',
+    'Thu',
+    'Fri',
+    'Sat',
+    'Sun',
   ];
 
   final Map<String, TimeOfDay?> collectionTimes = {};
@@ -130,11 +130,11 @@ class _GeneralScreenState extends State<GeneralScreen> {
   // Image upload function
   Future<String> uploadImage(
       Uint8List data, String companyName, String searchKey) async {
-    String currentDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
+    // String currentDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
 
     final sanitizedCompanyName = companyName.replaceAll(RegExp(r'\W+'), '_');
     String storagePath =
-        'company/images/general_information_images/$searchKey/$currentDate/$sanitizedCompanyName.jpg';
+        'company/images/general_information_images/$searchKey/$sanitizedCompanyName.jpg';
 
     FirebaseStorage storage = FirebaseStorage.instance;
     Reference ref = storage.ref().child(storagePath);
@@ -598,10 +598,9 @@ class _GeneralScreenState extends State<GeneralScreen> {
                                   });
                                 },
                                 items: <String>[
-                                  'Option 1',
-                                  'Option 2',
-                                  'Option 3',
-                                  'Option 4'
+                                  'Tiffin-Veg',
+                                  'Tiffin-Vegan',
+                                  'Tiffin-Meat',
                                 ].map<DropdownMenuItem<String>>((String value) {
                                   return DropdownMenuItem<String>(
                                     value: value,

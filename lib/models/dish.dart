@@ -7,6 +7,7 @@ class Dish {
   final String comboWithAnotherDish;
   final double comboPrice;
   final String dishImage;
+  final List<String> allergens;
   final Map<String, bool> dateAvailability;
 
   Dish({
@@ -19,6 +20,7 @@ class Dish {
     required this.comboPrice,
     required this.dishImage,
     required this.dateAvailability,
+    required this.allergens,
   });
 
   Map<String, dynamic> toFirestoreMap() {
@@ -34,6 +36,7 @@ class Dish {
       'comboPrice': comboPrice,
       'dishImage': dishImage,
       'dateAvailability': dateAvailability,
+      'allergens': allergens
     };
   }
 }
