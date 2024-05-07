@@ -268,11 +268,8 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
       Map<String, Map<String, dynamic>> dishMaps = {};
 
       for (Dish dish in dishes) {
-        // Upload each dish's image to Firebase Storage and get the download URL
         String imageUrl =
-            await uploadImage(_selectedImageData!, searchKey, dish.name);
-
-        // Use the imageUrl and update the dishImage in the map
+            await uploadImage(dish.imageData, searchKey, dish.name);
         dishMaps[dish.name] = dish.toFirestoreMap()..['dishImage'] = imageUrl;
       }
 
@@ -281,6 +278,9 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
 
       setState(() {
         dishes.clear(); // Clear local dishes after uploading
+        // Clear the selected image data
+        _selectedImageData = null;
+        selectedFile = null;
       });
 
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -330,7 +330,8 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
             _showError('Failed to read file');
             return;
           }
-
+          // Debugging: Print data length to verify
+          print('Image data length: ${data.length}');
           // Update the state with the selected image data
           setState(() {
             _selectedImageData = data;
@@ -379,12 +380,18 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
       comboPrice: double.parse(dishComboPriceController.text),
       dishImage: base64Encode(
           _selectedImageData!), // Use encoded image for local preview
+      imageData: _selectedImageData!, // Store original image data
       dateAvailability: getAvailabilityMap(_dateAvailability, isSelected),
       allergens: selectedAllergenList, // Include the allergen data
     );
 
     setState(() {
       dishes.add(dish); // Add dish locally
+      _selectedImageData = null;
+      selectedFile = null;
+      // Reset data availability
+      _dateAvailability = DateAvailability.everyDay; // or another default value
+      isSelected = List.generate(7, (_) => false); // Reset all days to false
     });
 
     // Clear the form fields and update the UI as needed
@@ -392,7 +399,6 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
     dishDescriptionController.clear();
     dishPriceController.clear();
     dishComboPriceController.clear();
-    selectedFile = null;
     selectedAllergens.updateAll((key, value) => false);
   }
 

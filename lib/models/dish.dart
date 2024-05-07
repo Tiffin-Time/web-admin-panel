@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 class Dish {
   final String name;
   final String description;
@@ -7,21 +9,22 @@ class Dish {
   final String comboWithAnotherDish;
   final double comboPrice;
   final String dishImage;
+  Uint8List imageData; // Actual image data
   final List<String> allergens;
   final Map<String, bool> dateAvailability;
 
-  Dish({
-    required this.name,
-    required this.description,
-    required this.price,
-    required this.typeOfDish,
-    required this.assignTags,
-    required this.comboWithAnotherDish,
-    required this.comboPrice,
-    required this.dishImage,
-    required this.dateAvailability,
-    required this.allergens,
-  });
+  Dish(
+      {required this.name,
+      required this.description,
+      required this.price,
+      required this.typeOfDish,
+      required this.assignTags,
+      required this.comboWithAnotherDish,
+      required this.comboPrice,
+      required this.dishImage,
+      required this.dateAvailability,
+      required this.allergens,
+      required this.imageData});
 
   Map<String, dynamic> toFirestoreMap() {
     return {
