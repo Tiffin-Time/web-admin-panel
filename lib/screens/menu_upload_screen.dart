@@ -1006,7 +1006,33 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
                   alignment: Alignment.centerLeft,
                   child: CustomButton(
                     text: 'Save Changes',
-                    onPressed: uploadDishesToFirestore,
+                    onPressed: () async {
+                      // Get the current time
+                      DateTime now = DateTime.now();
+
+                      // Check if today is Sunday and the current time is between 3 PM and 5 PM
+                      bool isSunday = now.weekday == DateTime.sunday;
+                      bool isBetween3And5PM = (now.hour >= 6 && now.hour < 23);
+
+                      if (!(isSunday && isBetween3And5PM)) {
+                        ScaffoldMessenger.of(context)
+                            .showSnackBar(const SnackBar(
+                          content: Text(
+                              "You can only upload menus on Sundays between 3 PM and 5 PM"),
+                          backgroundColor: Colors.red,
+                        ));
+                        return; // Exit the function if it's not the allowed time
+                      }
+
+                      // Call upload function if the conditions are met
+                      await uploadDishesToFirestore();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Dishes uploaded successfully"),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    },
                     width: 140,
                     color: lightBlue,
                   ),
