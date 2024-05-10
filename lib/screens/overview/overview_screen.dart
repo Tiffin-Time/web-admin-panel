@@ -41,6 +41,10 @@ class _OverviewScreenState extends State<OverviewScreen> {
   final TextEditingController bankDetailsController = TextEditingController();
   final TextEditingController companyAddressController =
       TextEditingController();
+  final TextEditingController bankNameController = TextEditingController();
+  final TextEditingController sortCodeController = TextEditingController();
+  final TextEditingController accountNumberController = TextEditingController();
+  final TextEditingController businessNameController = TextEditingController();
 
   Future<void> pickFile() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -240,15 +244,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
                               fontWeight: FontWeight.w500,
                               textColor: blackColor),
                           const Gap(5),
-                          CustomTextField(
-                            labelText: '',
-                            controller: bankDetailsController,
-                            enabled: true,
-                            maxlines: 3,
-                            borderRadius: 10.0,
-                            maxlen: 150,
-                            keyboardType: TextInputType.text,
-                          ),
+                          _buildBankDetailsSection(),
                           const Gap(20),
                           const CustomText(
                               size: 16,
@@ -296,6 +292,42 @@ class _OverviewScreenState extends State<OverviewScreen> {
     );
   }
 
+  Widget _buildBankDetailsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        CustomTextField(
+          labelText: 'Bank/Building Society',
+          controller: bankNameController,
+          enabled: true,
+          maxlines: 1,
+          borderRadius: 10.0,
+        ),
+        CustomTextField(
+          labelText: 'Sort Code',
+          controller: sortCodeController,
+          enabled: true,
+          maxlines: 1,
+          borderRadius: 10.0,
+        ),
+        CustomTextField(
+          labelText: 'Account Number',
+          controller: accountNumberController,
+          enabled: true,
+          maxlines: 1,
+          borderRadius: 10.0,
+        ),
+        CustomTextField(
+          labelText: 'Business Name',
+          controller: businessNameController,
+          enabled: true,
+          maxlines: 1,
+          borderRadius: 10.0,
+        ),
+      ],
+    );
+  }
+
   void downloadCSV() {
     List<List<dynamic>> rows = [];
 
@@ -335,6 +367,12 @@ class _OverviewScreenState extends State<OverviewScreen> {
     String companyName = companyNameController.text.trim();
     String niNumber = niNumberController.text.trim();
     String companyNumber = companyNumberController.text.trim();
+    Map<String, dynamic> bankDetails = {
+      'bankName': bankNameController.text.trim(),
+      'sortCode': sortCodeController.text.trim(),
+      'accountNumber': accountNumberController.text.trim(),
+      'businessName': businessNameController.text.trim(),
+    };
 
     // Generate a searchKey by removing non-alphabetic characters and converting to lowercase
     String searchKey = companyName
@@ -363,7 +401,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
         'companyName': companyName,
         'niNumber': niNumber,
         'companyNumber': companyNumber,
-        'bankDetails': bankDetailsController.text,
+        'bankDetails': bankDetails,
         'companyAddress': companyAddressController.text,
         'searchKey': searchKey, // Store the searchKey in Firestore
       });
@@ -373,7 +411,6 @@ class _OverviewScreenState extends State<OverviewScreen> {
         'documentId': docRef.id,
         'searchKey': searchKey // Include searchKey for easier lookup
       });
-
       // If registration is successful, proceed to upload files
       if (_selectedFile != null) {
         await uploadFileToFirebaseStorage(

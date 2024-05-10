@@ -48,6 +48,13 @@ class _GeneralScreenState extends State<GeneralScreen> {
       TextEditingController();
   final TextEditingController minOrderSpendController = TextEditingController();
   final TextEditingController daysNoticeController = TextEditingController();
+  final TextEditingController addressFirstLineController =
+      TextEditingController();
+  final TextEditingController addressPostCodeController =
+      TextEditingController();
+  final TextEditingController addressCountryController =
+      TextEditingController();
+  final TextEditingController addressCityController = TextEditingController();
 
   Widget buildOption(String title, DeliveryOption value) {
     bool isSelected = _deliveryOption == value;
@@ -74,6 +81,53 @@ class _GeneralScreenState extends State<GeneralScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildAddressSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const CustomText(
+            size: 16,
+            text: "Address Details:",
+            align: TextAlign.start,
+            fontWeight: FontWeight.w500,
+            textColor: blackColor),
+        const Gap(5),
+        CustomTextField(
+          labelText: 'First Line of Address',
+          controller: addressFirstLineController,
+          enabled: true,
+          maxlines: 1,
+          borderRadius: 10.0,
+          keyboardType: TextInputType.text,
+        ),
+        CustomTextField(
+          labelText: 'Postcode',
+          controller: addressPostCodeController,
+          enabled: true,
+          maxlines: 1,
+          borderRadius: 10.0,
+          keyboardType: TextInputType.text,
+        ),
+        CustomTextField(
+          labelText: 'City',
+          controller: addressCityController,
+          enabled: true,
+          maxlines: 1,
+          borderRadius: 10.0,
+          keyboardType: TextInputType.text,
+        ),
+        CustomTextField(
+          labelText: 'Country',
+          controller: addressCountryController,
+          enabled: true,
+          maxlines: 1,
+          borderRadius: 10.0,
+          keyboardType: TextInputType.text,
+        ),
+      ],
     );
   }
 
@@ -188,9 +242,16 @@ class _GeneralScreenState extends State<GeneralScreen> {
         }
       }
 
+      Map<String, dynamic> address = {
+        'firstLine': addressFirstLineController.text,
+        'postcode': addressPostCodeController.text,
+        'city': addressCityController.text,
+        'country': addressCountryController.text
+      };
+
       Map<String, dynamic> generalInfo = {
         'aboutUs': aboutUsController.text,
-        'address': addressController.text,
+        'address': address,
         'phoneNumber': phoneNumberController.text,
         'imageUrl': imageUrl,
         'daysOpen': daysOpen,
@@ -537,22 +598,7 @@ class _GeneralScreenState extends State<GeneralScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const CustomText(
-                              size: 16,
-                              text: "Address:",
-                              align: TextAlign.start,
-                              fontWeight: FontWeight.w500,
-                              textColor: blackColor),
-                          const Gap(5),
-                          CustomTextField(
-                            labelText: 'Address (including Postal Code)',
-                            controller: addressController,
-                            enabled: true,
-                            maxlines: 4,
-                            borderRadius: 10.0,
-                            maxlen: 200,
-                            keyboardType: TextInputType.text,
-                          ),
+                          _buildAddressSection(),
                           const Gap(20),
                           const CustomText(
                               size: 16,
