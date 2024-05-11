@@ -433,30 +433,76 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
                   fontWeight: FontWeight.bold,
                   textColor: blackColor,
                 ),
+                const Gap(10),
 
                 // Add dish image under 'Upload a Dish'
                 dishes.isNotEmpty
                     ? Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const CustomText(
                             size: 16,
-                            text: 'You added Dishes',
+                            text: 'You added Dishe(s)',
                             fontWeight: FontWeight.bold,
                             textColor: blackColor,
                           ),
                           const Gap(10),
                           Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: dishes
-                                .map((e) => ListTile(
-                                      title: Text(e.name),
-                                      subtitle: Text(e.description),
-                                      //show dish image
-                                      leading: Image.memory(
-                                          base64Decode(e.dishImage)),
+                                .map((e) => Container(
+                                      margin: const EdgeInsets.all(
+                                          10), // Provides spacing around the card
+                                      child: Card(
+                                        elevation: 1,
+                                        child: IntrinsicWidth(
+                                          child: Row(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              ClipRRect(
+                                                borderRadius:
+                                                    BorderRadius.circular(8.0),
+                                                child: Image.memory(
+                                                    base64Decode(e.dishImage),
+                                                    width: 100,
+                                                    height: 100,
+                                                    fit: BoxFit.cover),
+                                              ),
+                                              const SizedBox(
+                                                  width:
+                                                      10), // Space between image and text
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(e.name,
+                                                        style: const TextStyle(
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .bold)),
+                                                    Text(e.description),
+                                                  ],
+                                                ),
+                                              ),
+                                              IconButton(
+                                                icon: const Icon(Icons.close,
+                                                    color: Colors.red),
+                                                onPressed: () {
+                                                  setState(() {
+                                                    dishes.remove(
+                                                        e); // Removes the dish from the list
+                                                  });
+                                                },
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
                                     ))
                                 .toList(),
-                          ),
+                          )
                         ],
                       )
                     : const SizedBox(),
