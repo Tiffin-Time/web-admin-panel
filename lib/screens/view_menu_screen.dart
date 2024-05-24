@@ -15,6 +15,8 @@ class ViewMenuScreen extends StatefulWidget {
 
 class _ViewMenuScreenState extends State<ViewMenuScreen> {
   Stream<List<Map<String, dynamic>>>? dishes;
+  TextEditingController searchController = TextEditingController();
+  String searchQuery = '';
 
   @override
   void initState() {
@@ -149,7 +151,6 @@ class _ViewMenuScreenState extends State<ViewMenuScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      // 'Type of Dish: \$${dish['typeOfDish'].toString()}',
                       'Type of Dish: ${(dish['typeOfDish'] as Map<String, dynamic>).entries.where((entry) => entry.value == true).map((entry) => entry.key).join(', ')}',
                       style: const TextStyle(fontSize: 12),
                     ),
@@ -209,10 +210,31 @@ class _ViewMenuScreenState extends State<ViewMenuScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        actions: [
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 100),
+              child: TextField(
+                controller: searchController,
+                decoration: const InputDecoration(
+                  hintText: 'Search...',
+                  border: InputBorder.none,
+                ),
+                onChanged: (query) {
+                  setState(() {
+                    searchQuery = query.toLowerCase();
+                  });
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 50, vertical: 80),
+            margin: const EdgeInsets.symmetric(horizontal: 50, vertical: 40),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -234,6 +256,16 @@ class _ViewMenuScreenState extends State<ViewMenuScreen> {
                       return const Center(child: Text('Failed to load dishes'));
                     }
 
+                    // Filter dishes based on search query
+                    final List<Map<String, dynamic>> filteredDishes = snapshot
+                        .data!
+                        .where((dish) =>
+                            dish['name'].toLowerCase().contains(searchQuery) ||
+                            dish['description']
+                                .toLowerCase()
+                                .contains(searchQuery))
+                        .toList();
+
                     return GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
@@ -244,9 +276,9 @@ class _ViewMenuScreenState extends State<ViewMenuScreen> {
                         mainAxisSpacing: 4.0,
                         childAspectRatio: 2 / 3,
                       ),
-                      itemCount: snapshot.data!.length,
+                      itemCount: filteredDishes.length,
                       itemBuilder: (ctx, i) {
-                        var dish = snapshot.data![i];
+                        var dish = filteredDishes[i];
                         return buildDishCard(dish);
                       },
                     );
