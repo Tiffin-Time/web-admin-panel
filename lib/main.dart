@@ -5,6 +5,7 @@ import 'package:adminpanelweb/screens/menu_upload_screen.dart';
 import 'package:adminpanelweb/screens/order%20history/order_history_screen.dart';
 import 'package:adminpanelweb/screens/overview/overview_screen.dart';
 import 'package:adminpanelweb/screens/sales/sales_screen.dart';
+import 'package:adminpanelweb/screens/view_menu_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:adminpanelweb/firebase_options.dart';
@@ -52,11 +53,16 @@ class _HomeState extends State<Home> {
       'Menu Upload',
       'Sales',
       'Calendar View',
-      'Order History'
+      'Order History',
     ];
     if (isAdministrator) {
       tabs.insert(0, 'Overview');
     }
+
+    if (isLoggedIn) {
+      tabs.insert(5, 'View Menu');
+    }
+
     return tabs;
   }
 
@@ -64,6 +70,7 @@ class _HomeState extends State<Home> {
     if (!isLoggedIn) {
       return [LoginPage(onLoginSuccess: _handleLoginSuccess)];
     }
+
     List<Widget> widgets = [
       if (isAdministrator) OverviewScreen(userDocId: userDocId),
       GeneralScreen(userDocId: userDocId),
@@ -72,6 +79,10 @@ class _HomeState extends State<Home> {
       ViewSchedulePage(userDocId: userDocId),
       OrderHistoryScreen(userDocId: userDocId),
     ];
+
+    if (isLoggedIn) {
+      widgets.add(ViewMenuScreen(userDocId: userDocId));
+    }
     return widgets;
   }
 
@@ -144,8 +155,8 @@ class _HomeState extends State<Home> {
                   ),
                   if (isLoggedIn) // Only show logout button if logged in
                     ListTile(
-                      title:
-                          const Text('Logout', style: TextStyle(color: Colors.red)),
+                      title: const Text('Logout',
+                          style: TextStyle(color: Colors.red)),
                       onTap: _logout,
                     ),
                 ],

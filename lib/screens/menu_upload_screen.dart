@@ -17,6 +17,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:adminpanelweb/globals/globals.dart' as globals;
 
 class MenuUploadScreen extends StatefulWidget {
   final String? userDocId;
@@ -60,7 +61,8 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
     'Vegan',
     'Jain',
     'No Onion/ Garlic',
-    'High Protien'
+    'High Protein',
+    'Meat'
   ];
   List<bool> isTagSelected = [];
   @override
@@ -264,21 +266,25 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
         return;
       }
 
-      // Prepare the data structure for Firestore
-      Map<String, Map<String, dynamic>> dishMaps = {};
+// Prepare the data structure for Firestore
+      Map<String, dynamic> existingDishes = {};
+      final data = docSnapshot.data() as Map<String, dynamic>;
+      if (data != null && data.containsKey('dishes')) {
+        existingDishes = Map<String, dynamic>.from(data['dishes']);
+      }
 
       for (Dish dish in dishes) {
         String imageUrl =
             await uploadImage(dish.imageData, searchKey, dish.name);
-        dishMaps[dish.name] = dish.toFirestoreMap()..['dishImage'] = imageUrl;
+        existingDishes[dish.name] = dish.toFirestoreMap()
+          ..['dishImage'] = imageUrl;
       }
 
       // Update the Firestore document
-      await restaurantDoc.update({'dishes': dishMaps});
+      await restaurantDoc.update({'dishes': existingDishes});
 
       setState(() {
         dishes.clear(); // Clear local dishes after uploading
-        // Clear the selected image data
         _selectedImageData = null;
         selectedFile = null;
       });
@@ -355,13 +361,13 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
     );
   }
 
-  void _addDishLocally() {
+  void _addDishLocally() async {
     if (dishNameController.text.isEmpty ||
         dishDescriptionController.text.isEmpty ||
         dishPriceController.text.isEmpty ||
+        dishComboPriceController.text.isEmpty ||
         _selectedImageData == null) {
-      _showError(
-          'Please fill in all details and select an image.'); //TODO: CAN USE ERROR MESSAGE FROM FREELANCER
+      _showError('Please fill in all details and select an image.');
       return;
     }
 
@@ -370,12 +376,38 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
         .map((entry) => entry.key)
         .toList();
 
+    // Check for invalid tag combinations
+    List<String> selectedTags = getSelectedTags();
+    if (selectedTags.contains('Vegetarian') && selectedTags.contains('Vegan')) {
+      _showError('A dish cannot be both Vegetarian and Vegan.');
+      return;
+    }
+    if (selectedTags.contains('Vegetarian') && selectedTags.contains('Meat')) {
+      _showError('A dish cannot be both Vegetarian and Meat.');
+      return;
+    }
+    if (selectedTags.contains('Vegan') && selectedTags.contains('Meat')) {
+      _showError('A dish cannot be both Vegan and Meat.');
+      return;
+    }
+
+    if (selectedTags.isEmpty) {
+      _showError('Please select at least one tag.');
+      return;
+    }
+
+    // Check if at least one allergen is selected
+    if (selectedAllergenList.isEmpty) {
+      _showError('Please select at least one allergen.');
+      return;
+    }
+
     final dish = Dish(
       name: dishNameController.text,
       description: dishDescriptionController.text,
       price: double.parse(dishPriceController.text),
       typeOfDish: dishTypeValue,
-      assignTags: getSelectedTags(),
+      assignTags: selectedTags,
       comboWithAnotherDish: combowithAnotherDishValue,
       comboPrice: double.parse(dishComboPriceController.text),
       dishImage: base64Encode(
@@ -385,21 +417,56 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
       allergens: selectedAllergenList, // Include the allergen data
     );
 
-    setState(() {
-      dishes.add(dish); // Add dish locally
-      _selectedImageData = null;
-      selectedFile = null;
-      // Reset data availability
-      _dateAvailability = DateAvailability.everyDay; // or another default value
-      isSelected = List.generate(7, (_) => false); // Reset all days to false
-    });
+    // Check if the dish already exists in Firestore
+    bool dishExists = await checkDishExists(dish);
 
-    // Clear the form fields and update the UI as needed
-    dishNameController.clear();
-    dishDescriptionController.clear();
-    dishPriceController.clear();
-    dishComboPriceController.clear();
-    selectedAllergens.updateAll((key, value) => false);
+    if (dishExists) {
+      _showError('Dish with the same name and price already exists.');
+    } else {
+      setState(() {
+        dishes.add(dish); // Add dish locally
+        _selectedImageData = null;
+        selectedFile = null;
+        // Reset data availability
+        _dateAvailability =
+            DateAvailability.everyDay; // or another default value
+        isSelected = List.generate(7, (_) => false); // Reset all days to false
+      });
+
+      // Clear the form fields and update the UI as needed
+      dishNameController.clear();
+      dishDescriptionController.clear();
+      dishPriceController.clear();
+      dishComboPriceController.clear();
+      selectedAllergens.updateAll((key, value) => false);
+      // options.clear();
+    }
+  }
+
+  Future<bool> checkDishExists(Dish dish) async {
+    if (widget.userDocId == null) return false;
+
+    DocumentReference restaurantDoc = FirebaseFirestore.instance
+        .collection('Restaurants')
+        .doc(widget.userDocId);
+
+    DocumentSnapshot docSnapshot = await restaurantDoc.get();
+
+    if (!docSnapshot.exists || docSnapshot.data() == null) {
+      return false;
+    }
+
+    Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
+    if (data.containsKey('dishes')) {
+      for (var existingDish in data['dishes'].values) {
+        if (globals.capitalizeEachWord(existingDish['name']) ==
+                globals.capitalizeEachWord(dish.name) &&
+            existingDish['price'] == dish.price) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   @override
@@ -1057,7 +1124,7 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
                       DateTime now = DateTime.now();
 
                       // Check if today is Sunday and the current time is between 3 PM and 5 PM
-                      bool isSunday = now.weekday == DateTime.sunday;
+                      bool isSunday = now.weekday == DateTime.friday;
                       bool isBetween3And5PM = (now.hour >= 6 && now.hour < 23);
 
                       if (!(isSunday && isBetween3And5PM)) {
