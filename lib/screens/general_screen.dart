@@ -43,6 +43,8 @@ class _GeneralScreenState extends State<GeneralScreen> {
   final TextEditingController noticeController = TextEditingController();
   final TextEditingController collectionRadiusController =
       TextEditingController();
+  final TextEditingController collectionDeliveryRadiusController =
+      TextEditingController();
   final TextEditingController deliveryRadiusController =
       TextEditingController();
   final TextEditingController deliveryChargeController =
@@ -179,6 +181,7 @@ class _GeneralScreenState extends State<GeneralScreen> {
     orderSpendController.dispose();
     noticeController.dispose();
     collectionRadiusController.dispose();
+    collectionDeliveryRadiusController.dispose();
     deliveryRadiusController.dispose();
     deliveryChargeController.dispose();
     minOrderSpendController.dispose();
@@ -271,6 +274,7 @@ class _GeneralScreenState extends State<GeneralScreen> {
         'daysOpen': daysOpen,
         'tiffinType': tiffinTypeChosen,
         'collectionRadius': collectionRadiusController.text,
+        'collectionDeliveryRadius': collectionDeliveryRadiusController.text,
         'deliveryRadius': deliveryRadiusController.text,
         'deliveryCharge': deliveryChargeController.text,
         'minOrderSpend': minOrderSpendController.text,
@@ -398,15 +402,8 @@ class _GeneralScreenState extends State<GeneralScreen> {
                             color: Colors.black,
                             selectedColor: Colors.white,
                             fillColor: lightBlue,
-                            children: const <Widget>[
-                              Text('Mon'),
-                              Text('Tue'),
-                              Text('Wed'),
-                              Text('Thu'),
-                              Text('Fri'),
-                              Text('Sat'),
-                              Text('Sun'),
-                            ],
+                            children: List<Widget>.generate(daysOfWeek.length,
+                                (index) => Text(daysOfWeek[index])),
                           ),
                           const Gap(20),
                           const CustomText(
@@ -504,6 +501,24 @@ class _GeneralScreenState extends State<GeneralScreen> {
                                       const Gap(20),
                                       const CustomText(
                                           size: 16,
+                                          text: "Collection Radius (in miles)",
+                                          align: TextAlign.start,
+                                          fontWeight: FontWeight.w500,
+                                          textColor: blackColor),
+                                      const Gap(5),
+                                      CustomTextField(
+                                        labelText: 'Enter Number',
+                                        controller:
+                                            collectionDeliveryRadiusController,
+                                        enabled: true,
+                                        maxlines: 1,
+                                        borderRadius: 10.0,
+                                        maxlen: 3,
+                                        keyboardType: TextInputType.number,
+                                      ),
+                                      const Gap(20),
+                                      const CustomText(
+                                          size: 16,
                                           text: "Delivery Charge",
                                           align: TextAlign.start,
                                           fontWeight: FontWeight.w500,
@@ -527,85 +542,94 @@ class _GeneralScreenState extends State<GeneralScreen> {
                             color: greyColor.withOpacity(0.5),
                           ),
                           const Gap(20),
-                          Table(
-                            columnWidths: const {
-                              0: FlexColumnWidth(2),
-                              1: FlexColumnWidth(1),
-                              2: FlexColumnWidth(1),
-                              3: FlexColumnWidth(1),
-                            },
-                            children: [
-                              const TableRow(
-                                children: [
-                                  Text('Times for:',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold)),
-                                  CustomText(
-                                    size: 14,
-                                    text: 'Collection',
-                                    align: TextAlign.start,
-                                  ),
-                                  CustomText(
-                                    size: 14,
-                                    text: 'Delivery',
-                                    align: TextAlign.start,
-                                  ),
-                                  CustomText(
-                                    size: 14,
-                                    text: 'Max People Per Hour',
-                                    align: TextAlign.start,
-                                  ),
-                                ],
-                              ),
-                              ...daysOfWeek.map((day) {
-                                return TableRow(
-                                  children: [
-                                    Text(day),
-                                    Align(
-                                        alignment: Alignment.centerLeft,
-                                        child: GestureDetector(
-                                          onTap: () =>
-                                              selectTime(context, day, true),
-                                          child: CustomText(
-                                            size: 14,
-                                            textColor: lightBlue,
-                                            text: collectionTimes[day]
-                                                    ?.format(context) ??
-                                                'Select Time',
-                                            align: TextAlign.start,
-                                          ),
-                                        )),
-                                    Align(
-                                        alignment: Alignment.centerLeft,
-                                        child: GestureDetector(
-                                          onTap: () =>
-                                              selectTime(context, day, false),
-                                          child: CustomText(
-                                            size: 14,
-                                            textColor: lightBlue,
-                                            text: deliveryTimes[day]
-                                                    ?.format(context) ??
-                                                'Select Time',
-                                            align: TextAlign.start,
-                                          ),
-                                        )),
-                                    SizedBox(
-                                      height: 45,
-                                      child: TextField(
-                                        onChanged: (value) {
-                                          maxPeoplePerHour[day] = value;
-                                        },
-                                        keyboardType: TextInputType.number,
-                                        decoration: const InputDecoration(
-                                          border: OutlineInputBorder(),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              }).toList(),
-                            ],
-                          ),
+                          buildTable(),
+                          // Table(
+                          //   columnWidths: const {
+                          //     0: FlexColumnWidth(2),
+                          //     1: FlexColumnWidth(1),
+                          //     2: FlexColumnWidth(1),
+                          //     3: FlexColumnWidth(1),
+                          //   },
+                          //   children: [
+                          //     const TableRow(
+                          //       children: [
+                          //         Text('Times for:',
+                          //             style: TextStyle(
+                          //                 fontWeight: FontWeight.bold)),
+                          //         if (showCollection)
+                          //           CustomText(
+                          //             size: 14,
+                          //             text: 'Collection',
+                          //             align: TextAlign.start,
+                          //           ),
+                          //         CustomText(
+                          //           size: 14,
+                          //           text: 'Delivery',
+                          //           align: TextAlign.start,
+                          //         ),
+                          //         CustomText(
+                          //           size: 14,
+                          //           text: 'Max People Per Hour',
+                          //           align: TextAlign.start,
+                          //         ),
+                          //       ],
+                          //     ),
+                          //     ...daysOfWeek
+                          //         .asMap()
+                          //         .entries
+                          //         .where((entry) => isSelected[
+                          //             entry.key]) // entry.key is the index
+                          //         .map((entry) {
+                          //       String day = entry.value;
+
+                          //       return TableRow(
+                          //         children: [
+                          //           Text(day),
+                          //           Align(
+                          //               alignment: Alignment.centerLeft,
+                          //               child: GestureDetector(
+                          //                 onTap: () =>
+                          //                     selectTime(context, day, true),
+                          //                 child: CustomText(
+                          //                   size: 14,
+                          //                   textColor: lightBlue,
+                          //                   text: collectionTimes[day]
+                          //                           ?.format(context) ??
+                          //                       'Select Time',
+                          //                   align: TextAlign.start,
+                          //                 ),
+                          //               )),
+                          //           Align(
+                          //               alignment: Alignment.centerLeft,
+                          //               child: GestureDetector(
+                          //                 onTap: () =>
+                          //                     selectTime(context, day, false),
+                          //                 child: CustomText(
+                          //                   size: 14,
+                          //                   textColor: lightBlue,
+                          //                   text: deliveryTimes[day]
+                          //                           ?.format(context) ??
+                          //                       'Select Time',
+                          //                   align: TextAlign.start,
+                          //                 ),
+                          //               )),
+                          //           SizedBox(
+                          //             height: 45,
+                          //             child: TextField(
+                          //               onChanged: (value) {
+                          //                 maxPeoplePerHour[day] = value;
+                          //               },
+                          //               keyboardType: TextInputType.number,
+                          //               decoration: const InputDecoration(
+                          //                 border: OutlineInputBorder(),
+                          //               ),
+                          //             ),
+                          //           ),
+                          //         ],
+                          //       );
+                          //     }).toList(),
+                          //   ],
+                          // ),
                         ],
                       ),
                     ),
@@ -804,7 +828,8 @@ class _GeneralScreenState extends State<GeneralScreen> {
                           collectAndDeliveryControllers = [
                         deliveryRadiusController,
                         deliveryChargeController,
-                        minOrderSpendController
+                        minOrderSpendController,
+                        collectionDeliveryRadiusController
                       ];
 
                       bool isValidNumericInput(String input) {
@@ -849,6 +874,33 @@ class _GeneralScreenState extends State<GeneralScreen> {
                       // Check if no image is selected
                       bool noImageSelected = _pickedImage == null;
 
+                      bool validateDayEntries() {
+                        bool isValid = true;
+
+                        for (int i = 0; i < daysOfWeek.length; i++) {
+                          if (isSelected[i]) {
+                            // If the day is selected
+                            // Check if times and max people per hour are provided and valid
+                            if ((collectionTimes[daysOfWeek[i]] == null &&
+                                    _deliveryOption ==
+                                        DeliveryOption.collect) ||
+                                (deliveryTimes[daysOfWeek[i]] == null &&
+                                    _deliveryOption ==
+                                        DeliveryOption.collectAndDelivery) ||
+                                maxPeoplePerHour[daysOfWeek[i]] == null ||
+                                maxPeoplePerHour[daysOfWeek[i]]!.isEmpty ||
+                                int.tryParse(
+                                        maxPeoplePerHour[daysOfWeek[i]]!) ==
+                                    null) {
+                              isValid = false;
+                              break;
+                            }
+                          }
+                        }
+
+                        return isValid;
+                      }
+
                       if (allDeliveryFieldsValid ||
                           anyFieldEmpty ||
                           noDaySelected ||
@@ -856,6 +908,12 @@ class _GeneralScreenState extends State<GeneralScreen> {
                           noImageSelected) {
                         _showError(
                             'Please ensure all fields are filled correctly and selections are made.');
+                        return;
+                      }
+
+                      if (!validateDayEntries()) {
+                        _showError(
+                            'Please ensure all times and max people entries are filled out correctly for each active day.');
                         return;
                       }
 
@@ -875,61 +933,231 @@ class _GeneralScreenState extends State<GeneralScreen> {
     );
   }
 
-  void downloadCSV() {
-    List<List<dynamic>> rows = [];
+  Widget buildTable() {
+    bool showCollection = _deliveryOption == DeliveryOption.collect ||
+        _deliveryOption == DeliveryOption.collectAndDelivery;
+    bool showDelivery = _deliveryOption == DeliveryOption.collectAndDelivery;
+    // Table(
+    //   columnWidths: const {
+    //     0: FlexColumnWidth(2),
+    //     1: FlexColumnWidth(1),
+    //     2: FlexColumnWidth(1),
+    //     3: FlexColumnWidth(1),
+    //   },
+    //   children: [
+    //     const TableRow(
+    //       children: [
+    //         Text('Times for:',
+    //             style: TextStyle(
+    //                 fontWeight: FontWeight.bold)),
+    //         if (showCollection)
+    //           CustomText(
+    //             size: 14,
+    //             text: 'Collection',
+    //             align: TextAlign.start,
+    //           ),
+    //         CustomText(
+    //           size: 14,
+    //           text: 'Delivery',
+    //           align: TextAlign.start,
+    //         ),
+    //         CustomText(
+    //           size: 14,
+    //           text: 'Max People Per Hour',
+    //           align: TextAlign.start,
+    //         ),
+    //       ],
+    //     ),
+    //     ...daysOfWeek
+    //         .asMap()
+    //         .entries
+    //         .where((entry) => isSelected[
+    //             entry.key]) // entry.key is the index
+    //         .map((entry) {
+    //       String day = entry.value;
 
-    rows.add(['General Information']);
-    rows.add(['']);
-    rows.add(['']);
-
-    rows.add(['About us', '', '', aboutUsController.text]);
-    rows.add(['Address', '', '', addressController.text]);
-    rows.add(['Phone Number', '', '', phoneNumberController.text]);
-    List<String> row = ['Days you are open', '', ''];
-    for (int i = 0; i < isSelected.length; i++) {
-      if (isSelected[i]) {
-        row.add(daysOfWeek[i]);
-      }
-    }
-
-    rows.add(row);
-    rows.add(['Tiffin Type Provided', '', '', dropdownValue]);
-    rows.add(['Card Image Selection', '', '', 'true']);
-    rows.add(['People', '', '', peopleController.text]);
-    rows.add(['Order Spend', '', '', orderSpendController.text]);
-    rows.add(['Notice', '', '', noticeController.text]);
-    rows.add(['Collection Radius', '', '', collectionRadiusController.text]);
-    rows.add(['Delivery Radius', '', '', deliveryRadiusController.text]);
-    rows.add(['Delivery Charge', '', '', deliveryChargeController.text]);
-    rows.add(['Min Order Spend', '', '', minOrderSpendController.text]);
-    rows.add(['Days Notice', '', '', daysNoticeController.text]);
-    rows.add(['']);
-    rows.add(['']);
-
-    // Add header to rows
-    rows.add(['', 'Collection', 'Delivery', 'Max people per hour']);
-
-    // Add data to rows
-    for (String day in daysOfWeek) {
-      List<dynamic> row = [];
-      row.add(day);
-      row.add(collectionTimes[day]?.format(context) ?? 'N/A');
-      row.add(deliveryTimes[day]?.format(context) ?? 'N/A');
-      row.add(maxPeoplePerHour[day] ?? 'N/A');
-      rows.add(row);
-    }
-
-    String csv = const ListToCsvConverter().convert(rows);
-    final bytes = utf8.encode(csv);
-    final blob = html.Blob([bytes]);
-    final url = html.Url.createObjectUrlFromBlob(blob);
-    final anchor = html.document.createElement('a') as html.AnchorElement
-      ..href = url
-      ..style.display = 'none'
-      ..download = 'general_information.csv';
-    html.document.body!.children.add(anchor);
-    anchor.click();
-    html.document.body!.children.remove(anchor);
-    html.Url.revokeObjectUrl(url);
+    //       return TableRow(
+    //         children: [
+    //           Text(day),
+    //           Align(
+    //               alignment: Alignment.centerLeft,
+    //               child: GestureDetector(
+    //                 onTap: () =>
+    //                     selectTime(context, day, true),
+    //                 child: CustomText(
+    //                   size: 14,
+    //                   textColor: lightBlue,
+    //                   text: collectionTimes[day]
+    //                           ?.format(context) ??
+    //                       'Select Time',
+    //                   align: TextAlign.start,
+    //                 ),
+    //               )),
+    //           Align(
+    //               alignment: Alignment.centerLeft,
+    //               child: GestureDetector(
+    //                 onTap: () =>
+    //                     selectTime(context, day, false),
+    //                 child: CustomText(
+    //                   size: 14,
+    //                   textColor: lightBlue,
+    //                   text: deliveryTimes[day]
+    //                           ?.format(context) ??
+    //                       'Select Time',
+    //                   align: TextAlign.start,
+    //                 ),
+    //               )),
+    //           SizedBox(
+    //             height: 45,
+    //             child: TextField(
+    //               onChanged: (value) {
+    //                 maxPeoplePerHour[day] = value;
+    //               },
+    //               keyboardType: TextInputType.number,
+    //               decoration: const InputDecoration(
+    //                 border: OutlineInputBorder(),
+    //               ),
+    //             ),
+    //           ),
+    //         ],
+    //       );
+    //     }).toList(),
+    //   ],
+    // ),
+    return Table(
+      columnWidths: const {
+        0: FlexColumnWidth(2),
+        1: FlexColumnWidth(1),
+        2: FlexColumnWidth(1),
+        3: FlexColumnWidth(1),
+      },
+      children: [
+        TableRow(
+          children: [
+            const Text('Times for:',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            if (showCollection)
+              CustomText(size: 14, text: 'Collection', align: TextAlign.start),
+            if (showDelivery)
+              CustomText(size: 14, text: 'Delivery', align: TextAlign.start),
+            CustomText(
+                size: 14, text: 'Max People Per Hour', align: TextAlign.start),
+          ],
+        ),
+        ...daysOfWeek
+            .asMap()
+            .entries
+            .where((entry) => isSelected[entry.key]) // entry.key is the index
+            .map(
+          (entry) {
+            String day = entry.value;
+            {
+              return TableRow(
+                children: [
+                  Text(day),
+                  if (showCollection)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: GestureDetector(
+                        onTap: () => selectTime(context, day, true),
+                        child: CustomText(
+                          size: 14,
+                          textColor: lightBlue,
+                          text: collectionTimes[day]?.format(context) ??
+                              'Select Time',
+                          align: TextAlign.start,
+                        ),
+                      ),
+                    ),
+                  if (showDelivery)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: GestureDetector(
+                        onTap: () => selectTime(context, day, false),
+                        child: CustomText(
+                          size: 14,
+                          textColor: lightBlue,
+                          text: deliveryTimes[day]?.format(context) ??
+                              'Select Time',
+                          align: TextAlign.start,
+                        ),
+                      ),
+                    ),
+                  SizedBox(
+                    height: 45,
+                    child: TextField(
+                      onChanged: (value) => maxPeoplePerHour[day] = value,
+                      keyboardType: TextInputType.number,
+                      decoration:
+                          const InputDecoration(border: OutlineInputBorder()),
+                    ),
+                  ),
+                ],
+              );
+            }
+          },
+        ).toList(),
+      ],
+    );
   }
 }
+
+
+//   void downloadCSV() {
+//     List<List<dynamic>> rows = [];
+
+//     rows.add(['General Information']);
+//     rows.add(['']);
+//     rows.add(['']);
+
+//     rows.add(['About us', '', '', aboutUsController.text]);
+//     rows.add(['Address', '', '', addressController.text]);
+//     rows.add(['Phone Number', '', '', phoneNumberController.text]);
+//     List<String> row = ['Days you are open', '', ''];
+//     for (int i = 0; i < isSelected.length; i++) {
+//       if (isSelected[i]) {
+//         row.add(daysOfWeek[i]);
+//       }
+//     }
+
+//     rows.add(row);
+//     rows.add(['Tiffin Type Provided', '', '', dropdownValue]);
+//     rows.add(['Card Image Selection', '', '', 'true']);
+//     rows.add(['People', '', '', peopleController.text]);
+//     rows.add(['Order Spend', '', '', orderSpendController.text]);
+//     rows.add(['Notice', '', '', noticeController.text]);
+//     rows.add(['Collection Radius', '', '', collectionRadiusController.text]);
+//     rows.add(['Delivery Radius', '', '', deliveryRadiusController.text]);
+//     rows.add(['Delivery Charge', '', '', deliveryChargeController.text]);
+//     rows.add(['Min Order Spend', '', '', minOrderSpendController.text]);
+//     rows.add(['Days Notice', '', '', daysNoticeController.text]);
+//     rows.add(['']);
+//     rows.add(['']);
+
+//     // Add header to rows
+//     rows.add(['', 'Collection', 'Delivery', 'Max people per hour']);
+
+//     // Add data to rows
+//     for (String day in daysOfWeek) {
+//       List<dynamic> row = [];
+//       row.add(day);
+//       row.add(collectionTimes[day]?.format(context) ?? 'N/A');
+//       row.add(deliveryTimes[day]?.format(context) ?? 'N/A');
+//       row.add(maxPeoplePerHour[day] ?? 'N/A');
+//       rows.add(row);
+//     }
+
+//     String csv = const ListToCsvConverter().convert(rows);
+//     final bytes = utf8.encode(csv);
+//     final blob = html.Blob([bytes]);
+//     final url = html.Url.createObjectUrlFromBlob(blob);
+//     final anchor = html.document.createElement('a') as html.AnchorElement
+//       ..href = url
+//       ..style.display = 'none'
+//       ..download = 'general_information.csv';
+//     html.document.body!.children.add(anchor);
+//     anchor.click();
+//     html.document.body!.children.remove(anchor);
+//     html.Url.revokeObjectUrl(url);
+//   }
+// }
