@@ -626,19 +626,19 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
                                   enabled: true,
                                   maxlines: 3,
                                   borderRadius: 10.0,
-                                  maxlen: 250,
+                                  maxlen: 100,
                                   keyboardType: TextInputType.text,
                                 ),
                                 const Gap(20),
                                 const CustomText(
                                     size: 16,
-                                    text: "Price",
+                                    text: "Price in £",
                                     align: TextAlign.start,
                                     fontWeight: FontWeight.w500,
                                     textColor: blackColor),
                                 const Gap(5),
                                 CustomTextField(
-                                  labelText: 'Price of the Dish in INR',
+                                  labelText: 'Price of the Dish in £',
                                   controller: dishPriceController,
                                   enabled: true,
                                   maxlines: 1,
@@ -764,13 +764,13 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
                                 const Gap(20),
                                 const CustomText(
                                     size: 16,
-                                    text: "Combo Price",
+                                    text: "Combo Price in £",
                                     align: TextAlign.start,
                                     fontWeight: FontWeight.w500,
                                     textColor: blackColor),
                                 const Gap(5),
                                 CustomTextField(
-                                  labelText: 'Price of the Combo in INR',
+                                  labelText: 'Price of the Combo in £',
                                   controller: dishComboPriceController,
                                   enabled: true,
                                   maxlines: 1,
@@ -1238,109 +1238,109 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
     );
   }
 
-  void downloadCSV() {
-    List<List<dynamic>> rows = [];
+  // void downloadCSV() {
+  //   List<List<dynamic>> rows = [];
 
-    rows.add(['-- Menu Upload --', '', '', '']);
-    rows.add(['']);
+  //   rows.add(['-- Menu Upload --', '', '', '']);
+  //   rows.add(['']);
 
-    rows.add(['-> Uploaded Dishes', '', '', '']);
-    rows.add(['']);
-    if (dishes.isEmpty) {
-      rows.add(['No Dishes Uploaded']);
-    } else {
-      rows.add([
-        'No.',
-        'Name',
-        'Description',
-        'Price',
-        'Type of Dish',
-        'Assign Tag',
-        'Combo with another Dish',
-        'Combo Price',
-        'Dish Image',
-        'Date Availability',
-      ]);
-    }
+  //   rows.add(['-> Uploaded Dishes', '', '', '']);
+  //   rows.add(['']);
+  //   if (dishes.isEmpty) {
+  //     rows.add(['No Dishes Uploaded']);
+  //   } else {
+  //     rows.add([
+  //       'No.',
+  //       'Name',
+  //       'Description',
+  //       'Price',
+  //       'Type of Dish',
+  //       'Assign Tag',
+  //       'Combo with another Dish',
+  //       'Combo Price',
+  //       'Dish Image',
+  //       'Date Availability',
+  //     ]);
+  //   }
 
-    for (int i = 0; i < dishes.length; i++) {
-      var dishDateAval = 'Everyday';
-      if (dishes[i].dateAvailability == DateAvailability.selectedDays) {
-        dishDateAval = 'Selected Days';
-      }
-      rows.add([
-        "${(i + 1)}). ",
-        dishes[i].name,
-        dishes[i].description,
-        dishes[i].price,
-        dishes[i].typeOfDish,
-        dishes[i].assignTags,
-        dishes[i].comboWithAnotherDish,
-        dishes[i].comboPrice,
-        'true',
-        dishDateAval,
-      ]);
-    }
-    rows.add(['']);
+  //   for (int i = 0; i < dishes.length; i++) {
+  //     var dishDateAval = 'Everyday';
+  //     if (dishes[i].dateAvailability == DateAvailability.selectedDays) {
+  //       dishDateAval = 'Selected Days';
+  //     }
+  //     rows.add([
+  //       "${(i + 1)}). ",
+  //       dishes[i].name,
+  //       dishes[i].description,
+  //       dishes[i].price,
+  //       dishes[i].typeOfDish,
+  //       dishes[i].assignTags,
+  //       dishes[i].comboWithAnotherDish,
+  //       dishes[i].comboPrice,
+  //       'true',
+  //       dishDateAval,
+  //     ]);
+  //   }
+  //   rows.add(['']);
 
-    var isSubscriptionServiceString = 'No';
-    var deliveryFees = 'Free Delivery';
-    if (isSubscriptionService) {
-      isSubscriptionServiceString = 'Yes';
-    }
+  //   var isSubscriptionServiceString = 'No';
+  //   var deliveryFees = 'Free Delivery';
+  //   if (isSubscriptionService) {
+  //     isSubscriptionServiceString = 'Yes';
+  //   }
 
-    if (_deliveryFee == DeliveryFee.minimumOrderForFreeDelivery) {
-      deliveryFees = 'Minimum order spend for free delivery';
-    }
+  //   if (_deliveryFee == DeliveryFee.minimumOrderForFreeDelivery) {
+  //     deliveryFees = 'Minimum order spend for free delivery';
+  //   }
 
-    rows.add([
-      'Do you offer subscription service?',
-      '',
-      '',
-      isSubscriptionServiceString
-    ]);
-    rows.add([
-      'Does anything come included with a main?',
-      '',
-      '',
-      includeWithMainDetailController.text
-    ]);
-    rows.add(['Do you offer', '', '', deliveryFees]);
-    rows.add(['']);
-    rows.add(['-> Promotion Campaign', '', '', '']);
-    rows.add(['-']);
-    rows.add(['']);
-    rows.add(['-> Offers', '', '', '']);
-    rows.add(['']);
+  //   rows.add([
+  //     'Do you offer subscription service?',
+  //     '',
+  //     '',
+  //     isSubscriptionServiceString
+  //   ]);
+  //   rows.add([
+  //     'Does anything come included with a main?',
+  //     '',
+  //     '',
+  //     includeWithMainDetailController.text
+  //   ]);
+  //   rows.add(['Do you offer', '', '', deliveryFees]);
+  //   rows.add(['']);
+  //   rows.add(['-> Promotion Campaign', '', '', '']);
+  //   rows.add(['-']);
+  //   rows.add(['']);
+  //   rows.add(['-> Offers', '', '', '']);
+  //   rows.add(['']);
 
-    if (offers.isEmpty) {
-      rows.add(['No Offers Uploaded']);
-    } else {
-      rows.add(['No.', 'Dish Number', '% Off', 'Number of Days']);
-    }
-    for (int i = 0; i < offers.length; i++) {
-      rows.add([
-        "${(i + 1)}). ",
-        offers[i].mealsForWeek,
-        offers[i].week,
-        offers[i].offPresentage,
-      ]);
-    }
-    rows.add(['']);
+  //   if (offers.isEmpty) {
+  //     rows.add(['No Offers Uploaded']);
+  //   } else {
+  //     rows.add(['No.', 'Dish Number', '% Off', 'Number of Days']);
+  //   }
+  //   for (int i = 0; i < offers.length; i++) {
+  //     rows.add([
+  //       "${(i + 1)}). ",
+  //       offers[i].mealsForWeek,
+  //       offers[i].week,
+  //       offers[i].offPresentage,
+  //     ]);
+  //   }
+  //   rows.add(['']);
 
-    String csv = const ListToCsvConverter().convert(rows);
-    final bytes = utf8.encode(csv);
-    final blob = html.Blob([bytes]);
-    final url = html.Url.createObjectUrlFromBlob(blob);
-    final anchor = html.document.createElement('a') as html.AnchorElement
-      ..href = url
-      ..style.display = 'none'
-      ..download = 'uploaded_menu.csv';
-    html.document.body!.children.add(anchor);
-    anchor.click();
-    html.document.body!.children.remove(anchor);
-    html.Url.revokeObjectUrl(url);
-  }
+  //   String csv = const ListToCsvConverter().convert(rows);
+  //   final bytes = utf8.encode(csv);
+  //   final blob = html.Blob([bytes]);
+  //   final url = html.Url.createObjectUrlFromBlob(blob);
+  //   final anchor = html.document.createElement('a') as html.AnchorElement
+  //     ..href = url
+  //     ..style.display = 'none'
+  //     ..download = 'uploaded_menu.csv';
+  //   html.document.body!.children.add(anchor);
+  //   anchor.click();
+  //   html.document.body!.children.remove(anchor);
+  //   html.Url.revokeObjectUrl(url);
+  // }
 }
 
 Future<void> addDishToFirestore(List<Dish> dishes, String? userDocId) async {

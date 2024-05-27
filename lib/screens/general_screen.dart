@@ -531,13 +531,13 @@ class _GeneralScreenState extends State<GeneralScreen> {
                                       const Gap(20),
                                       const CustomText(
                                           size: 16,
-                                          text: "Delivery Charge",
+                                          text: "Delivery Charge in £",
                                           align: TextAlign.start,
                                           fontWeight: FontWeight.w500,
                                           textColor: blackColor),
                                       const Gap(5),
                                       CustomTextField(
-                                        labelText: 'Enter Price',
+                                        labelText: 'Enter Price in £',
                                         controller: deliveryChargeController,
                                         enabled: true,
                                         maxlines: 1,

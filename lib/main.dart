@@ -6,6 +6,8 @@ import 'package:adminpanelweb/screens/order%20history/order_history_screen.dart'
 import 'package:adminpanelweb/screens/overview/overview_screen.dart';
 import 'package:adminpanelweb/screens/sales/sales_screen.dart';
 import 'package:adminpanelweb/screens/view_menu_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:adminpanelweb/firebase_options.dart';
@@ -43,6 +45,9 @@ class _HomeState extends State<Home> {
   bool isAdministrator = false;
   int selectedIndex = 0; // Start with the login screen
   String? userDocId; // Store the document ID
+  DocumentSnapshot? doc;
+  String? searchKey = '';
+  String? assetPath = '';
 
   List<String> get tabNames {
     if (!isLoggedIn) {
@@ -59,7 +64,7 @@ class _HomeState extends State<Home> {
       tabs.insert(0, 'Overview');
     }
 
-    if (isLoggedIn) {
+    if (isLoggedIn && !isAdministrator) {
       tabs.insert(5, 'View Menu');
     }
 
@@ -86,13 +91,34 @@ class _HomeState extends State<Home> {
     return widgets;
   }
 
-  void _handleLoginSuccess(bool isAdmin, String documentId) {
+  Future<void> _handleLoginSuccess(bool isAdmin, String documentId) async {
     setState(() {
       isLoggedIn = true;
       isAdministrator = isAdmin;
       userDocId = documentId; // Save the document ID
       selectedIndex = isAdministrator ? 0 : 1;
     });
+
+    try {
+      DocumentReference restaurantDoc =
+          FirebaseFirestore.instance.collection('Restaurants').doc(userDocId);
+      DocumentSnapshot docSnapshot = await restaurantDoc.get();
+      Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
+
+      setState(() {
+        // Ensure that searchKey exists in the document
+        searchKey = data['searchKey'] ?? 'Unknown Search Key';
+        // Sanitize the restaurant name to create a valid file path
+        String companyName = data['companyName'] ?? 'Unknown Restaurant';
+
+        String sanitizedRestaurantName =
+            companyName.replaceAll(RegExp(r'\W+'), '_');
+        assetPath =
+            'company/images/general_information_images/$searchKey/$sanitizedRestaurantName.jpg';
+      });
+    } catch (e) {
+      print("Failed to fetch user data: $e");
+    }
   }
 
   void _logout() {
@@ -102,6 +128,24 @@ class _HomeState extends State<Home> {
       selectedIndex = 0;
       userDocId = null; // Clear the document ID
     });
+  }
+
+  Future<String> getImageUrl(String imagePath) async {
+    if (imagePath.isEmpty) {
+      print("Provided image path is empty.");
+      return 'assets/images/default.png'; // Provide a fallback image
+    }
+
+    final ref = FirebaseStorage.instance.ref().child(imagePath);
+
+    try {
+      final url = await ref.getDownloadURL();
+      print("Obtained URL: $url"); // Log the obtained URL
+      return url;
+    } catch (e) {
+      print("Error fetching image URL: $e");
+      return 'assets/images/default.png'; // Provide a fallback image if there's an error
+    }
   }
 
   @override
@@ -124,11 +168,79 @@ class _HomeState extends State<Home> {
               child: Column(
                 children: [
                   const SizedBox(height: 50),
-                  const CircleAvatar(
-                    backgroundImage:
-                        NetworkImage('https://i.ibb.co/tMWR7gV/logo.jpg'),
-                    radius: 60,
+                  // const CircleAvatar(
+                  //   backgroundImage:
+                  //       NetworkImage(getImageUrl(assetPath)),
+                  //   radius: 60,
+                  // ),
+                  FutureBuilder(
+                    future: getImageUrl(assetPath!),
+                    builder:
+                        (BuildContext context, AsyncSnapshot<String> snapshot) {
+                      if (snapshot.connectionState == ConnectionState.done &&
+                          snapshot.hasData) {
+                        return CircleAvatar(
+                          radius: 60,
+                          backgroundImage: NetworkImage(
+                            snapshot.data!,
+                          ),
+                          onBackgroundImageError: (exception, stackTrace) {
+                            // handle errors or set a fallback image
+                          },
+                          // Optional: Display a progress indicator while the image is loading
+                          child: snapshot.connectionState ==
+                                  ConnectionState.waiting
+                              ? CircularProgressIndicator()
+                              : null,
+                        );
+                      } else if (snapshot.connectionState ==
+                              ConnectionState.waiting ||
+                          !snapshot.hasData) {
+                        return const CircularProgressIndicator();
+                      }
+                      return Container(); // or any other fallback widget
+                    },
                   ),
+                  // FutureBuilder(
+                  //   future: getImageUrl(assetPath!),
+                  //   builder:
+                  //       (BuildContext context, AsyncSnapshot<String> snapshot) {
+                  //     if (snapshot.connectionState == ConnectionState.done &&
+                  //         snapshot.hasData) {
+                  //       return CircleAvatar(
+                  //         radius: 60,
+                  //         child: Image.network(
+                  //           snapshot.data!,
+                  //           // width: double.infinity,
+                  //           // height: 200,
+                  //           fit: BoxFit.cover,
+                  //           loadingBuilder: (BuildContext context, Widget child,
+                  //               ImageChunkEvent? loadingProgress) {
+                  //             if (loadingProgress == null) return child;
+                  //             return Center(
+                  //               child: CircularProgressIndicator(
+                  //                   value: loadingProgress.expectedTotalBytes !=
+                  //                           null
+                  //                       ? loadingProgress
+                  //                               .cumulativeBytesLoaded /
+                  //                           loadingProgress.expectedTotalBytes!
+                  //                       : null),
+                  //             );
+                  //           },
+                  //           errorBuilder: (BuildContext context,
+                  //               Object exception, StackTrace? stackTrace) {
+                  //             return const Icon(Icons.error);
+                  //           },
+                  //         ),
+                  //       );
+                  //     }
+                  //     if (snapshot.connectionState == ConnectionState.waiting ||
+                  //         !snapshot.hasData) {
+                  //       return const CircularProgressIndicator();
+                  //     }
+                  //     return Container();
+                  //   },
+                  // ),
                   const SizedBox(height: 5),
                   Expanded(
                     child: ListView.builder(
@@ -153,10 +265,10 @@ class _HomeState extends State<Home> {
                       },
                     ),
                   ),
-                  if (isLoggedIn) // Only show logout button if logged in
+                  if (isLoggedIn)
                     ListTile(
-                      title: const Text('Logout',
-                          style: TextStyle(color: Colors.red)),
+                      title: Text('Logout ($searchKey)',
+                          style: const TextStyle(color: Colors.red)),
                       onTap: _logout,
                     ),
                 ],
