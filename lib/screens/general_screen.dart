@@ -10,7 +10,6 @@ import 'package:adminpanelweb/consts/colors.dart';
 import 'package:adminpanelweb/widgets/custom_text.dart';
 import 'package:adminpanelweb/widgets/custom_btn.dart';
 import 'package:adminpanelweb/widgets/custom_textfield.dart';
-import 'package:csv/csv.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
@@ -259,6 +258,19 @@ class _GeneralScreenState extends State<GeneralScreen> {
         }
       }
 
+      bool isValidPhoneNumber(String input) {
+        // This pattern is quite general; you might need a more specific one depending on your needs
+        final RegExp phoneRegex = RegExp(r'^\+?(\d[\d -]{7,}\d$)');
+        return phoneRegex.hasMatch(input);
+      }
+
+      // Validate phone number first
+      String phoneNumber = phoneNumberController.text;
+      if (!isValidPhoneNumber(phoneNumber)) {
+        _showError('Please enter a valid phone number.');
+        return;
+      }
+
       Map<String, dynamic> address = {
         'firstLine': addressFirstLineController.text,
         'postcode': addressPostCodeController.text,
@@ -269,7 +281,7 @@ class _GeneralScreenState extends State<GeneralScreen> {
       Map<String, dynamic> generalInfo = {
         'aboutUs': aboutUsController.text,
         'address': address,
-        'phoneNumber': num.parse(phoneNumberController.text),
+        'phoneNumber': phoneNumber,
         'imageUrl': imageUrl,
         'daysOpen': daysOpen,
         'tiffinType': tiffinTypeChosen,
@@ -543,93 +555,6 @@ class _GeneralScreenState extends State<GeneralScreen> {
                           ),
                           const Gap(20),
                           buildTable(),
-                          // Table(
-                          //   columnWidths: const {
-                          //     0: FlexColumnWidth(2),
-                          //     1: FlexColumnWidth(1),
-                          //     2: FlexColumnWidth(1),
-                          //     3: FlexColumnWidth(1),
-                          //   },
-                          //   children: [
-                          //     const TableRow(
-                          //       children: [
-                          //         Text('Times for:',
-                          //             style: TextStyle(
-                          //                 fontWeight: FontWeight.bold)),
-                          //         if (showCollection)
-                          //           CustomText(
-                          //             size: 14,
-                          //             text: 'Collection',
-                          //             align: TextAlign.start,
-                          //           ),
-                          //         CustomText(
-                          //           size: 14,
-                          //           text: 'Delivery',
-                          //           align: TextAlign.start,
-                          //         ),
-                          //         CustomText(
-                          //           size: 14,
-                          //           text: 'Max People Per Hour',
-                          //           align: TextAlign.start,
-                          //         ),
-                          //       ],
-                          //     ),
-                          //     ...daysOfWeek
-                          //         .asMap()
-                          //         .entries
-                          //         .where((entry) => isSelected[
-                          //             entry.key]) // entry.key is the index
-                          //         .map((entry) {
-                          //       String day = entry.value;
-
-                          //       return TableRow(
-                          //         children: [
-                          //           Text(day),
-                          //           Align(
-                          //               alignment: Alignment.centerLeft,
-                          //               child: GestureDetector(
-                          //                 onTap: () =>
-                          //                     selectTime(context, day, true),
-                          //                 child: CustomText(
-                          //                   size: 14,
-                          //                   textColor: lightBlue,
-                          //                   text: collectionTimes[day]
-                          //                           ?.format(context) ??
-                          //                       'Select Time',
-                          //                   align: TextAlign.start,
-                          //                 ),
-                          //               )),
-                          //           Align(
-                          //               alignment: Alignment.centerLeft,
-                          //               child: GestureDetector(
-                          //                 onTap: () =>
-                          //                     selectTime(context, day, false),
-                          //                 child: CustomText(
-                          //                   size: 14,
-                          //                   textColor: lightBlue,
-                          //                   text: deliveryTimes[day]
-                          //                           ?.format(context) ??
-                          //                       'Select Time',
-                          //                   align: TextAlign.start,
-                          //                 ),
-                          //               )),
-                          //           SizedBox(
-                          //             height: 45,
-                          //             child: TextField(
-                          //               onChanged: (value) {
-                          //                 maxPeoplePerHour[day] = value;
-                          //               },
-                          //               keyboardType: TextInputType.number,
-                          //               decoration: const InputDecoration(
-                          //                 border: OutlineInputBorder(),
-                          //               ),
-                          //             ),
-                          //           ),
-                          //         ],
-                          //       );
-                          //     }).toList(),
-                          //   ],
-                          // ),
                         ],
                       ),
                     ),
@@ -664,38 +589,6 @@ class _GeneralScreenState extends State<GeneralScreen> {
                               fontWeight: FontWeight.w500,
                               textColor: blackColor),
                           const Gap(5),
-                          // Container(
-                          //   padding:
-                          //       const EdgeInsets.symmetric(horizontal: 10.0),
-                          //   decoration: BoxDecoration(
-                          //     borderRadius: BorderRadius.circular(20),
-                          //     border: Border.all(
-                          //       color: Colors.grey,
-                          //       width: 1.0,
-                          //     ),
-                          //   ),
-                          //   child: DropdownButtonHideUnderline(
-                          //     child: DropdownButton<String>(
-                          //       isExpanded: true,
-                          //       value: dropdownValue,
-                          //       onChanged: (String? newValue) {
-                          //         setState(() {
-                          //           dropdownValue = newValue!;
-                          //         });
-                          //       },
-                          //       items: <String>[
-                          //         'Tiffin-Veg',
-                          //         'Tiffin-Vegan',
-                          //         'Tiffin-Meat',
-                          //       ].map<DropdownMenuItem<String>>((String value) {
-                          //         return DropdownMenuItem<String>(
-                          //           value: value,
-                          //           child: Text(value),
-                          //         );
-                          //       }).toList(),
-                          //     ),
-                          //   ),
-                          // ),
                           ToggleButtons(
                             borderRadius: BorderRadius.circular(30),
                             constraints: const BoxConstraints.expand(
@@ -937,93 +830,6 @@ class _GeneralScreenState extends State<GeneralScreen> {
     bool showCollection = _deliveryOption == DeliveryOption.collect ||
         _deliveryOption == DeliveryOption.collectAndDelivery;
     bool showDelivery = _deliveryOption == DeliveryOption.collectAndDelivery;
-    // Table(
-    //   columnWidths: const {
-    //     0: FlexColumnWidth(2),
-    //     1: FlexColumnWidth(1),
-    //     2: FlexColumnWidth(1),
-    //     3: FlexColumnWidth(1),
-    //   },
-    //   children: [
-    //     const TableRow(
-    //       children: [
-    //         Text('Times for:',
-    //             style: TextStyle(
-    //                 fontWeight: FontWeight.bold)),
-    //         if (showCollection)
-    //           CustomText(
-    //             size: 14,
-    //             text: 'Collection',
-    //             align: TextAlign.start,
-    //           ),
-    //         CustomText(
-    //           size: 14,
-    //           text: 'Delivery',
-    //           align: TextAlign.start,
-    //         ),
-    //         CustomText(
-    //           size: 14,
-    //           text: 'Max People Per Hour',
-    //           align: TextAlign.start,
-    //         ),
-    //       ],
-    //     ),
-    //     ...daysOfWeek
-    //         .asMap()
-    //         .entries
-    //         .where((entry) => isSelected[
-    //             entry.key]) // entry.key is the index
-    //         .map((entry) {
-    //       String day = entry.value;
-
-    //       return TableRow(
-    //         children: [
-    //           Text(day),
-    //           Align(
-    //               alignment: Alignment.centerLeft,
-    //               child: GestureDetector(
-    //                 onTap: () =>
-    //                     selectTime(context, day, true),
-    //                 child: CustomText(
-    //                   size: 14,
-    //                   textColor: lightBlue,
-    //                   text: collectionTimes[day]
-    //                           ?.format(context) ??
-    //                       'Select Time',
-    //                   align: TextAlign.start,
-    //                 ),
-    //               )),
-    //           Align(
-    //               alignment: Alignment.centerLeft,
-    //               child: GestureDetector(
-    //                 onTap: () =>
-    //                     selectTime(context, day, false),
-    //                 child: CustomText(
-    //                   size: 14,
-    //                   textColor: lightBlue,
-    //                   text: deliveryTimes[day]
-    //                           ?.format(context) ??
-    //                       'Select Time',
-    //                   align: TextAlign.start,
-    //                 ),
-    //               )),
-    //           SizedBox(
-    //             height: 45,
-    //             child: TextField(
-    //               onChanged: (value) {
-    //                 maxPeoplePerHour[day] = value;
-    //               },
-    //               keyboardType: TextInputType.number,
-    //               decoration: const InputDecoration(
-    //                 border: OutlineInputBorder(),
-    //               ),
-    //             ),
-    //           ),
-    //         ],
-    //       );
-    //     }).toList(),
-    //   ],
-    // ),
     return Table(
       columnWidths: const {
         0: FlexColumnWidth(2),
@@ -1101,63 +907,3 @@ class _GeneralScreenState extends State<GeneralScreen> {
     );
   }
 }
-
-
-//   void downloadCSV() {
-//     List<List<dynamic>> rows = [];
-
-//     rows.add(['General Information']);
-//     rows.add(['']);
-//     rows.add(['']);
-
-//     rows.add(['About us', '', '', aboutUsController.text]);
-//     rows.add(['Address', '', '', addressController.text]);
-//     rows.add(['Phone Number', '', '', phoneNumberController.text]);
-//     List<String> row = ['Days you are open', '', ''];
-//     for (int i = 0; i < isSelected.length; i++) {
-//       if (isSelected[i]) {
-//         row.add(daysOfWeek[i]);
-//       }
-//     }
-
-//     rows.add(row);
-//     rows.add(['Tiffin Type Provided', '', '', dropdownValue]);
-//     rows.add(['Card Image Selection', '', '', 'true']);
-//     rows.add(['People', '', '', peopleController.text]);
-//     rows.add(['Order Spend', '', '', orderSpendController.text]);
-//     rows.add(['Notice', '', '', noticeController.text]);
-//     rows.add(['Collection Radius', '', '', collectionRadiusController.text]);
-//     rows.add(['Delivery Radius', '', '', deliveryRadiusController.text]);
-//     rows.add(['Delivery Charge', '', '', deliveryChargeController.text]);
-//     rows.add(['Min Order Spend', '', '', minOrderSpendController.text]);
-//     rows.add(['Days Notice', '', '', daysNoticeController.text]);
-//     rows.add(['']);
-//     rows.add(['']);
-
-//     // Add header to rows
-//     rows.add(['', 'Collection', 'Delivery', 'Max people per hour']);
-
-//     // Add data to rows
-//     for (String day in daysOfWeek) {
-//       List<dynamic> row = [];
-//       row.add(day);
-//       row.add(collectionTimes[day]?.format(context) ?? 'N/A');
-//       row.add(deliveryTimes[day]?.format(context) ?? 'N/A');
-//       row.add(maxPeoplePerHour[day] ?? 'N/A');
-//       rows.add(row);
-//     }
-
-//     String csv = const ListToCsvConverter().convert(rows);
-//     final bytes = utf8.encode(csv);
-//     final blob = html.Blob([bytes]);
-//     final url = html.Url.createObjectUrlFromBlob(blob);
-//     final anchor = html.document.createElement('a') as html.AnchorElement
-//       ..href = url
-//       ..style.display = 'none'
-//       ..download = 'general_information.csv';
-//     html.document.body!.children.add(anchor);
-//     anchor.click();
-//     html.document.body!.children.remove(anchor);
-//     html.Url.revokeObjectUrl(url);
-//   }
-// }
