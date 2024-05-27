@@ -30,6 +30,7 @@ class GeneralScreen extends StatefulWidget {
 class _GeneralScreenState extends State<GeneralScreen> {
   DeliveryOption _deliveryOption = DeliveryOption.collect;
   List<bool> isSelected = List.generate(7, (_) => false);
+  List<bool> isSelectedTiffinType = List.generate(3, (_) => false);
   TimeOfDay selectedTime = TimeOfDay.now();
   String dropdownValue = 'Tiffin-Veg';
 
@@ -141,6 +142,12 @@ class _GeneralScreenState extends State<GeneralScreen> {
     'Sun',
   ];
 
+  final List<String> tiffinType = [
+    'Tiffin-Veg',
+    'Tiffin-Meat',
+    'Tiffin-Vegan',
+  ];
+
   final Map<String, TimeOfDay?> collectionTimes = {};
   final Map<String, TimeOfDay?> deliveryTimes = {};
   final Map<String, String> maxPeoplePerHour = {};
@@ -242,6 +249,13 @@ class _GeneralScreenState extends State<GeneralScreen> {
         }
       }
 
+      List<String> tiffinTypeChosen = [];
+      for (int i = 0; i < tiffinType.length; i++) {
+        if (isSelectedTiffinType[i]) {
+          tiffinTypeChosen.add(tiffinType[i]);
+        }
+      }
+
       Map<String, dynamic> address = {
         'firstLine': addressFirstLineController.text,
         'postcode': addressPostCodeController.text,
@@ -252,15 +266,17 @@ class _GeneralScreenState extends State<GeneralScreen> {
       Map<String, dynamic> generalInfo = {
         'aboutUs': aboutUsController.text,
         'address': address,
-        'phoneNumber': phoneNumberController.text,
+        'phoneNumber': num.parse(phoneNumberController.text),
         'imageUrl': imageUrl,
         'daysOpen': daysOpen,
-        'tiffinType': dropdownValue,
+        'tiffinType': tiffinTypeChosen,
         'collectionRadius': collectionRadiusController.text,
         'deliveryRadius': deliveryRadiusController.text,
         'deliveryCharge': deliveryChargeController.text,
         'minOrderSpend': minOrderSpendController.text,
-        'daysNotice': daysNoticeController.text,
+        'orderSpendController': int.parse(orderSpendController.text),
+        'daysNotice': int.parse(daysNoticeController.text),
+        'peopleController': int.parse(peopleController.text),
         'collectionTimes':
             collectionTimes.map((k, v) => MapEntry(k, v?.format(context))),
         'deliveryTimes':
@@ -278,7 +294,7 @@ class _GeneralScreenState extends State<GeneralScreen> {
         backgroundColor: Colors.green,
       ));
     } catch (e) {
-      _showError('Error uploading general information: $e');
+      _showError('Error uploading general information: ${e.toString()}');
     }
   }
 
@@ -624,37 +640,57 @@ class _GeneralScreenState extends State<GeneralScreen> {
                               fontWeight: FontWeight.w500,
                               textColor: blackColor),
                           const Gap(5),
-                          Container(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 10.0),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: Colors.grey,
-                                width: 1.0,
-                              ),
-                            ),
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                isExpanded: true,
-                                value: dropdownValue,
-                                onChanged: (String? newValue) {
-                                  setState(() {
-                                    dropdownValue = newValue!;
-                                  });
-                                },
-                                items: <String>[
-                                  'Tiffin-Veg',
-                                  'Tiffin-Vegan',
-                                  'Tiffin-Meat',
-                                ].map<DropdownMenuItem<String>>((String value) {
-                                  return DropdownMenuItem<String>(
-                                    value: value,
-                                    child: Text(value),
-                                  );
-                                }).toList(),
-                              ),
-                            ),
+                          // Container(
+                          //   padding:
+                          //       const EdgeInsets.symmetric(horizontal: 10.0),
+                          //   decoration: BoxDecoration(
+                          //     borderRadius: BorderRadius.circular(20),
+                          //     border: Border.all(
+                          //       color: Colors.grey,
+                          //       width: 1.0,
+                          //     ),
+                          //   ),
+                          //   child: DropdownButtonHideUnderline(
+                          //     child: DropdownButton<String>(
+                          //       isExpanded: true,
+                          //       value: dropdownValue,
+                          //       onChanged: (String? newValue) {
+                          //         setState(() {
+                          //           dropdownValue = newValue!;
+                          //         });
+                          //       },
+                          //       items: <String>[
+                          //         'Tiffin-Veg',
+                          //         'Tiffin-Vegan',
+                          //         'Tiffin-Meat',
+                          //       ].map<DropdownMenuItem<String>>((String value) {
+                          //         return DropdownMenuItem<String>(
+                          //           value: value,
+                          //           child: Text(value),
+                          //         );
+                          //       }).toList(),
+                          //     ),
+                          //   ),
+                          // ),
+                          ToggleButtons(
+                            borderRadius: BorderRadius.circular(30),
+                            constraints: const BoxConstraints.expand(
+                                width: 90, height: 50),
+                            onPressed: (int index) {
+                              setState(() {
+                                isSelectedTiffinType[index] =
+                                    !isSelectedTiffinType[index];
+                              });
+                            },
+                            isSelected: isSelectedTiffinType,
+                            color: Colors.black,
+                            selectedColor: Colors.white,
+                            fillColor: lightBlue,
+                            children: const <Widget>[
+                              Text('Tiffin-Veg'),
+                              Text('Tiffin-Vegan'),
+                              Text('Tiffin-Meat'),
+                            ],
                           ),
                           const Gap(20),
                           const CustomText(
@@ -751,7 +787,81 @@ class _GeneralScreenState extends State<GeneralScreen> {
                   alignment: Alignment.centerLeft,
                   child: CustomButton(
                     text: 'Save Changes',
-                    onPressed: uploadGeneralInfoToFirestore,
+                    onPressed: () async {
+                      List<TextEditingController> controllers = [
+                        aboutUsController,
+                        addressFirstLineController,
+                        addressPostCodeController,
+                        addressCityController,
+                        addressCountryController,
+                        phoneNumberController,
+                        daysNoticeController,
+                        peopleController,
+                        orderSpendController,
+                      ];
+
+                      List<TextEditingController>
+                          collectAndDeliveryControllers = [
+                        deliveryRadiusController,
+                        deliveryChargeController,
+                        minOrderSpendController
+                      ];
+
+                      bool isValidNumericInput(String input) {
+                        try {
+                          int.parse(input);
+                          return false;
+                        } catch (e) {
+                          return true;
+                        }
+                      }
+
+                      // Check if all delivery fields are empty or all are filled and if they are of type int
+                      bool allDeliveryFieldsValid =
+                          (collectAndDeliveryControllers.any(
+                                    (c) {
+                                      try {
+                                        int.parse(c.text);
+                                        return false;
+                                      } catch (e) {
+                                        return true;
+                                      }
+                                    },
+                                  ) &&
+                                  (_deliveryOption ==
+                                      DeliveryOption.collectAndDelivery)) ||
+                              (isValidNumericInput(
+                                      collectionRadiusController.text) &&
+                                  (_deliveryOption == DeliveryOption.collect));
+
+                      // Check if any text field is empty
+                      bool anyFieldEmpty =
+                          controllers.any((c) => c.text.isEmpty);
+
+                      // Check if no day is selected
+                      bool noDaySelected =
+                          isSelected.every((element) => !element);
+
+                      // Check if no tiffin type is selected
+                      bool noTiffinTypeSelected =
+                          isSelectedTiffinType.every((element) => !element);
+
+                      // Check if no image is selected
+                      bool noImageSelected = _pickedImage == null;
+
+                      if (allDeliveryFieldsValid ||
+                          anyFieldEmpty ||
+                          noDaySelected ||
+                          noTiffinTypeSelected ||
+                          noImageSelected) {
+                        _showError(
+                            'Please ensure all fields are filled correctly and selections are made.');
+                        return;
+                      }
+
+                      // Proceed to upload information if all validations are passed
+                      await uploadGeneralInfoToFirestore();
+                    },
                     width: 140,
                     color: lightBlue,
                   ),

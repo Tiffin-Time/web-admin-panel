@@ -3,6 +3,7 @@ import 'package:adminpanelweb/widgets/custom_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:adminpanelweb/globals/globals.dart' as globals;
 
 class ViewMenuScreen extends StatefulWidget {
   final String? userDocId;
@@ -76,17 +77,6 @@ class _ViewMenuScreenState extends State<ViewMenuScreen> {
     }
   }
 
-  String capitalizeEachWord(String text) {
-    List<String> words = text.split(' ');
-
-    List<String> capitalizedWords = words.map((word) {
-      if (word.isEmpty) return word;
-      return word[0].toUpperCase() + word.substring(1).toLowerCase();
-    }).toList();
-
-    return capitalizedWords.join(' ');
-  }
-
   Widget buildDishCard(Map<String, dynamic> dish) {
     String sanitizedDishName = dish['name'].replaceAll(RegExp(r'\W+'), '_');
     String searchKey = dish['searchKey'] ?? 'Unknown_searchKey';
@@ -129,7 +119,7 @@ class _ViewMenuScreenState extends State<ViewMenuScreen> {
                         ),
                     const SizedBox(height: 4),
                     Text(
-                      capitalizeEachWord(dish['name']),
+                      globals.capitalizeEachWord(dish['name']),
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
