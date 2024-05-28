@@ -288,10 +288,6 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
         _selectedImageData = null;
         selectedFile = null;
       });
-
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text("Dishes uploaded successfully"),
-          backgroundColor: Colors.green));
     } catch (e) {
       _showError('Error uploading dishes: $e');
     }
@@ -364,10 +360,20 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
   void _addDishLocally() async {
     if (dishNameController.text.isEmpty ||
         dishDescriptionController.text.isEmpty ||
-        dishPriceController.text.isEmpty ||
-        dishComboPriceController.text.isEmpty ||
+        // dishPriceController.text.isEmpty ||
+        // dishComboPriceController.text.isEmpty ||
         _selectedImageData == null) {
       _showError('Please fill in all details and select an image.');
+      return;
+    }
+
+    try {
+      // Attempt to parse the price and combo price to double
+      double.parse(dishPriceController.text);
+      double.parse(dishComboPriceController.text);
+    } catch (e) {
+      // If parsing fails, show an error and return
+      _showError('Please fill in price details in numbers only.');
       return;
     }
 
@@ -695,7 +701,7 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
                                     textColor: blackColor),
                                 const Gap(5),
                                 SizedBox(
-                                  height: 250,
+                                  height: 300,
                                   child: ListView.builder(
                                     itemCount: options.length,
                                     itemBuilder:
@@ -1124,8 +1130,8 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
                       DateTime now = DateTime.now();
 
                       // Check if today is Sunday and the current time is between 3 PM and 5 PM
-                      bool isSunday = now.weekday == DateTime.friday;
-                      bool isBetween3And5PM = (now.hour >= 6 && now.hour < 23);
+                      bool isSunday = now.weekday == DateTime.tuesday;
+                      bool isBetween3And5PM = (now.hour >= 1 && now.hour < 23);
 
                       if (!(isSunday && isBetween3And5PM)) {
                         ScaffoldMessenger.of(context)
@@ -1135,16 +1141,20 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
                           backgroundColor: Colors.red,
                         ));
                         return; // Exit the function if it's not the allowed time
+                      } else if (dishes.isEmpty) {
+                        ScaffoldMessenger.of(context)
+                            .showSnackBar(const SnackBar(
+                          content: Text(
+                              "Please add at least one dish to save changes."),
+                          backgroundColor: Colors.red,
+                        ));
+                      } else {
+                        await uploadDishesToFirestore();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text("Dishes uploaded successfully"),
+                                backgroundColor: Colors.green));
                       }
-
-                      // Call upload function if the conditions are met
-                      await uploadDishesToFirestore();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Dishes uploaded successfully"),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
                     },
                     width: 140,
                     color: lightBlue,

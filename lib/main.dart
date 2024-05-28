@@ -11,6 +11,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:adminpanelweb/firebase_options.dart';
+import 'package:adminpanelweb/screens/view_registered_restaurants_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -62,9 +63,11 @@ class _HomeState extends State<Home> {
     ];
     if (isAdministrator) {
       tabs.insert(0, 'Overview');
+      tabs.add('Registered Restaurants');
     }
 
     if (isLoggedIn && !isAdministrator) {
+      // void add(E value); TODO: COULD ADD INSTEAD
       tabs.insert(5, 'View Menu');
     }
 
@@ -83,9 +86,11 @@ class _HomeState extends State<Home> {
       SalesScreen(userDocId: userDocId),
       ViewSchedulePage(userDocId: userDocId),
       OrderHistoryScreen(userDocId: userDocId),
+      if (isAdministrator)
+        ViewRegisteredRestaurantsScreen(userDocId: userDocId),
     ];
 
-    if (isLoggedIn) {
+    if (isLoggedIn && !isAdministrator) {
       widgets.add(ViewMenuScreen(userDocId: userDocId));
     }
     return widgets;
