@@ -83,12 +83,12 @@ class _ViewRegisteredRestaurantsScreenState
                         future: getImageUrl(imagePath),
                         builder: (context, snapshot) {
                           if (snapshot.connectionState ==
-                              ConnectionState.waiting)
-                            return SizedBox(
+                              ConnectionState.waiting) {
+                            return const SizedBox(
                                 height: 60,
                                 child:
                                     Center(child: CircularProgressIndicator()));
-                          else if (snapshot.hasError ||
+                          } else if (snapshot.hasError ||
                               !snapshot.hasData ||
                               snapshot.data!.isEmpty)
                             return Icon(Icons.error, size: 50);
@@ -110,7 +110,7 @@ class _ViewRegisteredRestaurantsScreenState
                       ),
                       SizedBox(height: 4),
                       Text(
-                        restaurant['companyName'],
+                        restaurant['companyName'] ?? 'N/A',
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
@@ -118,34 +118,34 @@ class _ViewRegisteredRestaurantsScreenState
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
+                      // SizedBox(height: 2),
+                      // Text(
+                      //   'Company Address: ${restaurant['companyAddress'] ?? 'N/A}',
+                      //   maxLines: 2,
+                      //   overflow: TextOverflow.ellipsis,
+                      //   style: TextStyle(fontSize: 12),
+                      // ),
                       SizedBox(height: 2),
                       Text(
-                        'Company Address: ${restaurant['companyAddress']}',
+                        'Company Number: ${restaurant['companyNumber'] ?? 'N/A'}',
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(fontSize: 12),
                       ),
                       SizedBox(height: 2),
                       Text(
-                        'Company Number: ${restaurant['companyNumber']}',
+                        'NiNumber: ${restaurant['niNumber'] ?? 'N/A'}',
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(fontSize: 12),
                       ),
-                      SizedBox(height: 2),
-                      Text(
-                        'NiNumber: ${restaurant['niNumber']}',
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 12),
-                      ),
-                      SizedBox(height: 2),
-                      Text(
-                        'Bank Details: ${restaurant['bankDetails']}',
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 12),
-                      ),
+                      // SizedBox(height: 2),
+                      // Text(
+                      //   'Bank Details: ${restaurant['bankDetails'] ?? 'N/A}',
+                      //   maxLines: 2,
+                      //   overflow: TextOverflow.ellipsis,
+                      //   style: TextStyle(fontSize: 12),
+                      // ),
                     ],
                   ),
                 ),
@@ -356,78 +356,6 @@ class _ViewRegisteredRestaurantsScreenState
   }
 }
 
-// class RestaurantDetailsScreen extends StatelessWidget {
-
-//   final String restaurantId;
-
-//   RestaurantDetailsScreen({required this.restaurantId});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text("Restaurant Details"),
-//       ),
-//       body: FutureBuilder<DocumentSnapshot>(
-//         future: FirebaseFirestore.instance
-//             .collection('Restaurants')
-//             .doc(restaurantId)
-//             .get(),
-//         builder: (context, snapshot) {
-//           if (snapshot.connectionState == ConnectionState.waiting) {
-//             return Center(child: CircularProgressIndicator());
-//           }
-//           if (snapshot.hasError) {
-//             return Center(child: Text("Error fetching details"));
-//           }
-//           if (!snapshot.hasData || snapshot.data!.data() == null) {
-//             return const Center(child: Text("No details available"));
-//           }
-
-//           var data = snapshot.data!.data() as Map<String, dynamic>? ?? {};
-//           var generalInfo =
-//               data['generalInformation'] as Map<String, dynamic>? ?? {};
-
-//           // Safely access String fields
-//           String companyName = data['companyName'] as String? ?? 'No Name';
-//           String companyAddress =
-//               data['companyAddress'] as String? ?? 'No Address';
-//           String aboutUs = generalInfo['aboutUs'] as String? ?? 'Not provided';
-
-//           // Handling List data safely
-//           List<dynamic> daysOpen =
-//               generalInfo['daysOpen'] as List<dynamic>? ?? [];
-
-//           String daysOpenStr = daysOpen.join(
-//               ', '); // This converts the list to a comma-separated string safely.
-
-//           return ListView(
-//             children: [
-//               ListTile(
-//                 title: Text("Name"),
-//                 subtitle: Text(companyName),
-//               ),
-//               ListTile(
-//                 title: Text("Address"),
-//                 subtitle: Text(companyAddress),
-//               ),
-//               ListTile(
-//                 title: Text("About Us"),
-//                 subtitle: Text(aboutUs),
-//               ),
-//               ListTile(
-//                 title: Text("Days Open"),
-//                 subtitle: Text(daysOpenStr),
-//               ),
-//               // Add more fields from generalInformation as required
-//             ],
-//           );
-//         },
-//       ),
-//     );
-//   }
-// }
-
 class RestaurantDetailsScreen extends StatelessWidget {
   final String restaurantId;
 
@@ -456,19 +384,78 @@ class RestaurantDetailsScreen extends StatelessWidget {
           }
 
           var data = snapshot.data!.data() as Map<String, dynamic>? ?? {};
+          var generalInfo =
+              data['generalInformation'] as Map<String, dynamic>? ?? {};
+          var parsedAddress =
+              generalInfo['address'] as Map<String, dynamic>? ?? {};
+
+          // Safely access String fields
+          String companyName = data['companyName'] as String? ?? 'No Name';
+          // String companyAddress =
+          //     data['companyAddress'] as String? ?? 'No Address';
+          String aboutUs = generalInfo['aboutUs'] as String? ?? 'Not provided';
+
+          String companyParsedAddress = parsedAddress.isNotEmpty
+              ? "${parsedAddress['firstLine']}, ${parsedAddress['city']}, ${parsedAddress['country']}, ${parsedAddress['postcode']}"
+              : 'No Address';
+
+          // Handling List data safely
+          List<dynamic> daysOpen =
+              generalInfo['daysOpen'] as List<dynamic>? ?? [];
+
+          String collectionRadius = generalInfo['collectionRadius'] ?? '';
+
+          String daysOpenStr = daysOpen.join(
+              ', '); // This converts the list to a comma-separated string safely.
 
           return ListView(
             children: [
               ListTile(
                 title: Text("Name"),
-                subtitle: Text(data['companyName'] as String? ?? 'No Name'),
+                subtitle: Text(companyName),
+              ),
+              // ListTile(
+              //   title: Text("Address"),
+              //   subtitle: Text(companyAddress),
+              // ),
+              ListTile(
+                title: Text("About Us"),
+                subtitle: Text(aboutUs),
+              ),
+              ListTile(
+                title: Text("Collection Radius"),
+                subtitle: Text(collectionRadius),
+              ),
+              ListTile(
+                title: Text("Days Open"),
+                subtitle: Text(daysOpenStr),
               ),
               ListTile(
                 title: Text("Address"),
-                subtitle:
-                    Text(data['companyAddress'] as String? ?? 'No Address'),
+                subtitle: Text(companyParsedAddress),
               ),
-              // Add more details as required
+              //               ListTile(
+              //   title: Text("Days Open"),
+              //   subtitle: Text(daysOpenStr),
+              // ),
+              //               ListTile(
+              //   title: Text("Days Open"),
+              //   subtitle: Text(daysOpenStr),
+              // ),
+              //               ListTile(
+              //   title: Text("Days Open"),
+              //   subtitle: Text(daysOpenStr),
+              // ),
+              //               ListTile(
+              //   title: Text("Days Open"),
+              //   subtitle: Text(daysOpenStr),
+              // ),
+              //               ListTile(
+              //   title: Text("Days Open"),
+              //   subtitle: Text(daysOpenStr),
+              // ),
+
+              // Add more fields from generalInformation as required
             ],
           );
         },
@@ -476,51 +463,3 @@ class RestaurantDetailsScreen extends StatelessWidget {
     );
   }
 }
-
-// class RestaurantDetailsScreen extends StatelessWidget {
-//   final String restaurantId;
-
-//   const RestaurantDetailsScreen({Key? key, required this.restaurantId})
-//       : super(key: key);
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text('Restaurant Details'),
-//       ),
-//       body: FutureBuilder<DocumentSnapshot>(
-//         future: FirebaseFirestore.instance
-//             .collection('Restaurants')
-//             .doc(restaurantId)
-//             .get(),
-//         builder: (context, snapshot) {
-//           if (snapshot.connectionState == ConnectionState.waiting) {
-//             return Center(child: CircularProgressIndicator());
-//           }
-//           if (snapshot.hasError) {
-//             return Center(child: Text("Error fetching details"));
-//           }
-//           if (!snapshot.hasData || snapshot.data!.data() == null) {
-//             return const Center(child: Text("No details available"));
-//           }
-
-//           var data = snapshot.data!.data() as Map<String, dynamic>;
-//           var generalInfo = data['generalInformation'] as Map<String, dynamic>;
-
-//           return Padding(
-//             padding: const EdgeInsets.all(16.0),
-//             child: ListView(
-//               children: generalInfo.entries.map((entry) {
-//                 return ListTile(
-//                   title: Text(entry.key),
-//                   subtitle: Text(entry.value.toString()),
-//                 );
-//               }).toList(),
-//             ),
-//           );
-//         },
-//       ),
-//     );
-//   }
-// }
