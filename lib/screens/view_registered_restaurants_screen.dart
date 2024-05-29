@@ -517,23 +517,6 @@ class RestaurantDetailsScreen extends StatelessWidget {
   }
 }
 
-/* 
-      // appBar: AppBar(title: Text("Registered Restaurants")),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 50, vertical: 40),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const CustomText(
-                  size: 23,
-                  text: "Registered Restaurants",
-                  align: TextAlign.start,
-                  fontWeight: FontWeight.w600,
-                  textColor: blackColor,
-                ),
-                */
 class RestaurantMenuDetailsScreen extends StatelessWidget {
   final String restaurantId;
   final Map<String, dynamic> dishes;
@@ -545,7 +528,7 @@ class RestaurantMenuDetailsScreen extends StatelessWidget {
     String dishName = dish['name'] ?? 'Unknown Dish';
     List<dynamic> allergens = dish['allergens'] ?? [];
     List<dynamic> assignTags = dish['assignTags'] ?? [];
-    int comboPrice = dish['price'] ?? 0;
+    int comboPrice = dish['comboPrice'] ?? 0;
 
     return Card(
       margin: const EdgeInsets.all(4),
@@ -564,6 +547,14 @@ class RestaurantMenuDetailsScreen extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
             SizedBox(height: 4),
+            const SizedBox(height: 2),
+            Text(
+              dish['description'],
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 12),
+            ),
+            SizedBox(height: 4),
             Text(
               'Allergens: ${allergens.join(', ')}',
               maxLines: 2,
@@ -579,10 +570,23 @@ class RestaurantMenuDetailsScreen extends StatelessWidget {
             ),
             SizedBox(height: 2),
             Text(
-              'Price: \$${comboPrice.toString()}',
+              'Price: £${comboPrice.toString()}',
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(fontSize: 12),
+            ),
+            SizedBox(height: 2),
+            Text(
+              'Available: ${(dish['dateAvailability'] as Map<String, dynamic>).entries.where((entry) => entry.value == true).map((entry) => entry.key).join(', ')}',
+              style: const TextStyle(fontSize: 12),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            SizedBox(height: 2),
+            Text(
+              'Type of Dish: ${(dish['typeOfDish'] as Map<String, dynamic>).entries.where((entry) => entry.value == true).map((entry) => entry.key).join(', ')}',
+              style: const TextStyle(fontSize: 12),
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -592,10 +596,10 @@ class RestaurantMenuDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    List<Map> dishesList = dishes.entries.map((entry) {
+    List<Map<String, dynamic>> dishesList = dishes.entries.map((entry) {
       return {
         'name': entry.key,
-        ...entry.value,
+        ...entry.value as Map<String, dynamic>,
       };
     }).toList();
 
@@ -615,24 +619,20 @@ class RestaurantMenuDetailsScreen extends StatelessWidget {
                 textColor: blackColor,
               ),
               const SizedBox(height: 40),
-              ...dishes.entries.map((entry) {
-                String dishName = entry.key;
-                // Map<String, dynamic> dishDetails = entry.value;
-                return GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: 200,
-                    crossAxisSpacing: 4.0,
-                    mainAxisSpacing: 4.0,
-                    childAspectRatio: 2 / 3,
-                  ),
-                  itemCount: dishesList.length,
-                  itemBuilder: (context, index) {
-                    return buildDishesCard({'name': dishName});
-                  },
-                );
-              }).toList(),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 150, // Adjusted for 7 columns
+                  crossAxisSpacing: 4.0,
+                  mainAxisSpacing: 4.0,
+                  childAspectRatio: 2 / 3,
+                ),
+                itemCount: dishesList.length,
+                itemBuilder: (context, index) {
+                  return buildDishesCard(dishesList[index]);
+                },
+              ),
             ],
           ),
         ),
