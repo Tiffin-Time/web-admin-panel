@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:adminpanelweb/consts/colors.dart';
 import 'package:adminpanelweb/widgets/custom_text.dart';
+import 'package:adminpanelweb/globals/globals.dart' as globals;
 
 class ViewRegisteredRestaurantsScreen extends StatefulWidget {
   final String? userDocId;
@@ -77,7 +78,7 @@ class _ViewRegisteredRestaurantsScreenState
             children: [
               InkWell(
                 onTap: () async {
-                  String? docId = await getDocIdBySearchKey(searchKey);
+                  String? docId = await globals.getDocIdBySearchKey(searchKey);
                   print("Navigating to details with Restaurant ID: $docId");
                   _navigateToDetailsScreen(context, docId);
                 },
@@ -183,8 +184,8 @@ class _ViewRegisteredRestaurantsScreenState
                               child: const Text("Delete",
                                   style: TextStyle(color: Colors.red)),
                               onPressed: () async {
-                                String? docId =
-                                    await getDocIdBySearchKey(searchKey);
+                                String? docId = await globals
+                                    .getDocIdBySearchKey(searchKey);
                                 Navigator.of(context).pop();
 
                                 print("Deleting Restuarant with ID: $docId");
@@ -209,24 +210,6 @@ class _ViewRegisteredRestaurantsScreenState
     );
   }
 
-  Future<String?> getDocIdBySearchKey(String searchKey) async {
-    try {
-      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-          .collection('Restaurants')
-          .where('searchKey', isEqualTo: searchKey)
-          .limit(1)
-          .get();
-      if (querySnapshot.docs.isNotEmpty) {
-        return querySnapshot.docs.first.id;
-      } else {
-        return null;
-      }
-    } catch (e) {
-      print("Error fetching document ID: $e");
-      return null;
-    }
-  }
-
   void _navigateToDetailsScreen(BuildContext context, String? restaurantId) {
     if (restaurantId != null) {
       Navigator.push(
@@ -248,30 +231,6 @@ class _ViewRegisteredRestaurantsScreenState
     }
   }
 
-  // Future<void> deleteRestaurant(String id) async {
-  //   try {
-  //     await FirebaseFirestore.instance
-  //         .collection('Restaurants')
-  //         .doc(id)
-  //         .delete();
-  //     await FirebaseFirestore.instance
-  //         .collection('companyCredentials')
-  //         .doc(id)
-  //         .delete();
-  //     setState(() {
-  //       restaurants = fetchRestaurants();
-  //     });
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text("Restaurant deleted successfully")),
-  //     );
-  //   } catch (e) {
-  //     print("Error deleting restaurant: $e");
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text("Failed to delete restaurant")),
-  //     );
-  //   }
-  // }
-
   Future<void> deleteRestaurant(String id, String companyName) async {
     try {
       // Delete the restaurant document from the Restaurants collection
@@ -291,14 +250,14 @@ class _ViewRegisteredRestaurantsScreenState
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
             content: Text(
                 "Restaurant and associated credentials deleted successfully")),
       );
     } catch (e) {
       print("Error deleting restaurant: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
             content:
                 Text("Failed to delete restaurant and associated credentials")),
       );
@@ -420,6 +379,37 @@ class RestaurantDetailsScreen extends StatelessWidget {
 
   RestaurantDetailsScreen({required this.restaurantId});
 
+  Future<Map<String, dynamic>?> getRestaurantData(String restaurantId) async {
+    try {
+      DocumentSnapshot snapshot = await FirebaseFirestore.instance
+          .collection('Restaurants')
+          .doc(restaurantId)
+          .get();
+
+      if (snapshot.exists) {
+        return snapshot.data() as Map<String, dynamic>?;
+      } else {
+        return null;
+      }
+    } catch (e) {
+      print("Error fetching restaurant data: $e");
+      return null;
+    }
+  }
+
+  void _navigateToMenuDetailsScreen(
+      BuildContext context, Map<String, dynamic> dishes) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => RestaurantMenuDetailsScreen(
+          restaurantId: restaurantId,
+          dishes: dishes,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -460,57 +450,192 @@ class RestaurantDetailsScreen extends StatelessWidget {
               List<String>.from(generalInfo['daysOpen'] ?? []);
           String daysOpenStr = daysOpen.join(', ');
 
-          return Container(
+          var dishes = data['dishes'] as Map<String, dynamic>? ?? {};
+
+          return SingleChildScrollView(
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 50, vertical: 40),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const CustomText(
+                    size: 23,
+                    text: "Restaurant Details",
+                    align: TextAlign.start,
+                    fontWeight: FontWeight.w600,
+                    textColor: blackColor,
+                  ),
+                  const SizedBox(height: 40),
+                  ListTile(
+                    leading: Icon(Icons.restaurant),
+                    title: Text(
+                      companyName,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Divider(),
+                  ListTile(
+                    leading: Icon(Icons.info),
+                    title: Text("About Us"),
+                    subtitle: Text(aboutUs),
+                  ),
+                  Divider(),
+                  ListTile(
+                    leading: Icon(Icons.map),
+                    title: Text("Collection Radius"),
+                    subtitle: Text(collectionRadius),
+                  ),
+                  Divider(),
+                  ListTile(
+                    leading: Icon(Icons.calendar_today),
+                    title: Text("Days Open"),
+                    subtitle: Text(daysOpenStr),
+                  ),
+                  Divider(),
+                  ListTile(
+                    leading: Icon(Icons.location_on),
+                    title: Text("Address"),
+                    subtitle: Text(companyParsedAddress),
+                  ),
+                  Divider(),
+                  TextButton(
+                    child: const Text("View Menu"),
+                    onPressed: () {
+                      _navigateToMenuDetailsScreen(context, dishes);
+                    },
+                  )
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/* 
+      // appBar: AppBar(title: Text("Registered Restaurants")),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 50, vertical: 40),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const CustomText(
                   size: 23,
-                  text: "Restaurant Details",
+                  text: "Registered Restaurants",
                   align: TextAlign.start,
                   fontWeight: FontWeight.w600,
                   textColor: blackColor,
                 ),
-                const SizedBox(height: 40),
-                ListTile(
-                  leading: Icon(Icons.restaurant),
-                  title: Text(
-                    companyName,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                Divider(),
-                ListTile(
-                  leading: Icon(Icons.info),
-                  title: Text("About Us"),
-                  subtitle: Text(aboutUs),
-                ),
-                Divider(),
-                ListTile(
-                  leading: Icon(Icons.map),
-                  title: Text("Collection Radius"),
-                  subtitle: Text(collectionRadius),
-                ),
-                Divider(),
-                ListTile(
-                  leading: Icon(Icons.calendar_today),
-                  title: Text("Days Open"),
-                  subtitle: Text(daysOpenStr),
-                ),
-                Divider(),
-                ListTile(
-                  leading: Icon(Icons.location_on),
-                  title: Text("Address"),
-                  subtitle: Text(companyParsedAddress),
-                ),
-              ],
+                */
+class RestaurantMenuDetailsScreen extends StatelessWidget {
+  final String restaurantId;
+  final Map<String, dynamic> dishes;
+
+  RestaurantMenuDetailsScreen(
+      {required this.restaurantId, required this.dishes});
+
+  Widget buildDishesCard(Map<String, dynamic> dish) {
+    String dishName = dish['name'] ?? 'Unknown Dish';
+    List<dynamic> allergens = dish['allergens'] ?? [];
+    List<dynamic> assignTags = dish['assignTags'] ?? [];
+    int comboPrice = dish['price'] ?? 0;
+
+    return Card(
+      margin: const EdgeInsets.all(4),
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              dishName,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-          );
-        },
+            SizedBox(height: 4),
+            Text(
+              'Allergens: ${allergens.join(', ')}',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 12),
+            ),
+            SizedBox(height: 2),
+            Text(
+              'Tags: ${assignTags.join(', ')}',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 12),
+            ),
+            SizedBox(height: 2),
+            Text(
+              'Price: \$${comboPrice.toString()}',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 12),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    List<Map> dishesList = dishes.entries.map((entry) {
+      return {
+        'name': entry.key,
+        ...entry.value,
+      };
+    }).toList();
+
+    return Scaffold(
+      appBar: AppBar(),
+      body: SingleChildScrollView(
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 50, vertical: 40),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const CustomText(
+                size: 23,
+                text: "Restaurant Menu",
+                align: TextAlign.start,
+                fontWeight: FontWeight.w600,
+                textColor: blackColor,
+              ),
+              const SizedBox(height: 40),
+              ...dishes.entries.map((entry) {
+                String dishName = entry.key;
+                // Map<String, dynamic> dishDetails = entry.value;
+                return GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 200,
+                    crossAxisSpacing: 4.0,
+                    mainAxisSpacing: 4.0,
+                    childAspectRatio: 2 / 3,
+                  ),
+                  itemCount: dishesList.length,
+                  itemBuilder: (context, index) {
+                    return buildDishesCard({'name': dishName});
+                  },
+                );
+              }).toList(),
+            ],
+          ),
+        ),
       ),
     );
   }
