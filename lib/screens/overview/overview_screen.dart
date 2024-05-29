@@ -18,6 +18,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 // import 'package:path/path.dart' as path;
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart' show kIsWeb; // For platform checks
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 
 class OverviewScreen extends StatefulWidget {
   final String? userDocId;
@@ -374,10 +376,54 @@ class _OverviewScreenState extends State<OverviewScreen> {
       'businessName': businessNameController.text.trim(),
     };
 
+// // Normalize the company name
+//     String normalizedCompanyName =
+//         companyName.toLowerCase();
+
+    // // Check if the normalized company name already exists
+    // QuerySnapshot nameQuerySnapshot = await firestore
+    //     .collection('Restaurants')
+    //     .where('companyName', isEqualTo: companyName.toLowerCase())
+    //     .get();
+
+    // if (nameQuerySnapshot.docs.isNotEmpty) {
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     const SnackBar(
+    //       content: Text("A company with this username already exists."),
+    //       backgroundColor: Colors.red,
+    //     ),
+    //   );
+    //   return; // Exit if the company name already exists
+    // }
+
+// Normalize the company name
+    String normalizedCompanyName = companyName.toLowerCase();
+
+    // Fetch all existing companies and perform a case-insensitive check
+    QuerySnapshot allCompaniesSnapshot =
+        await firestore.collection('Restaurants').get();
+    bool companyExists = allCompaniesSnapshot.docs.any((doc) {
+      String existingCompanyName = (doc['companyName'] as String).toLowerCase();
+      return existingCompanyName == normalizedCompanyName;
+    });
+
+    if (companyExists) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("A company with this username already exists."),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return; // Exit if the company name already exists
+    }
     // Generate a searchKey by removing non-alphabetic characters and converting to lowercase
-    String searchKey = companyName
-        .toLowerCase()
-        .replaceAll(RegExp(r'[^a-z]+'), ''); // Keep only lowercase letters
+    String normalized =
+        companyName.toLowerCase().replaceAll(RegExp(r'[^a-z]+'), '');
+    String hash = md5
+        .convert(utf8.encode(companyName))
+        .toString()
+        .substring(0, 6); // Short hash
+    String searchKey = "$normalized-$hash";
 
     // Check for existing company registration using searchKey
     QuerySnapshot querySnapshot = await firestore

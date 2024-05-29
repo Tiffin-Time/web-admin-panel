@@ -33,13 +33,20 @@ class _ViewRegisteredRestaurantsScreenState
     return FirebaseFirestore.instance
         .collection('Restaurants')
         .snapshots()
-        .map((snapshot) => snapshot.docs
-          ..map((doc) => {
-                'id': doc.id, // Capture the document ID from Firestore
-                ...doc.data() as Map<String,
-                    dynamic>, // Include other document data fields
-              }).toList());
+        .map((snapshot) => snapshot.docs);
   }
+
+  // Stream<List<DocumentSnapshot>> fetchRestaurants() {
+  //   return FirebaseFirestore.instance
+  //       .collection('Restaurants')
+  //       .snapshots()
+  //       .map((snapshot) => snapshot.docs
+  //         ..map((doc) => {
+  //               'id': doc.id, // Capture the document ID from Firestore
+  //               ...doc.data() as Map<String,
+  //                   dynamic>, // Include other document data fields
+  //             }).toList());
+  // }
 
   Future<String> getImageUrl(String path) async {
     final ref = FirebaseStorage.instance.ref().child(path);
@@ -175,11 +182,17 @@ class _ViewRegisteredRestaurantsScreenState
                             TextButton(
                               child: const Text("Delete",
                                   style: TextStyle(color: Colors.red)),
-                              onPressed: () {
-                                // Proceed with deletion
-                                deleteRestaurant(restaurant['id']);
-                                // Dismiss the dialog after action
+                              onPressed: () async {
+                                String? docId =
+                                    await getDocIdBySearchKey(searchKey);
                                 Navigator.of(context).pop();
+
+                                print("Deleting Restuarant with ID: $docId");
+                                // Proceed with deletion
+                                if (docId != null) {
+                                  deleteRestaurant(docId, companyName);
+                                }
+                                // Dismiss the dialog after action
                               },
                             ),
                           ],
@@ -235,14 +248,60 @@ class _ViewRegisteredRestaurantsScreenState
     }
   }
 
-  Future<void> deleteRestaurant(String id) async {
-    if (widget.userDocId != null) {
-      DocumentReference restaurantDoc = FirebaseFirestore.instance
+  // Future<void> deleteRestaurant(String id) async {
+  //   try {
+  //     await FirebaseFirestore.instance
+  //         .collection('Restaurants')
+  //         .doc(id)
+  //         .delete();
+  //     await FirebaseFirestore.instance
+  //         .collection('companyCredentials')
+  //         .doc(id)
+  //         .delete();
+  //     setState(() {
+  //       restaurants = fetchRestaurants();
+  //     });
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text("Restaurant deleted successfully")),
+  //     );
+  //   } catch (e) {
+  //     print("Error deleting restaurant: $e");
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text("Failed to delete restaurant")),
+  //     );
+  //   }
+  // }
+
+  Future<void> deleteRestaurant(String id, String companyName) async {
+    try {
+      // Delete the restaurant document from the Restaurants collection
+      await FirebaseFirestore.instance
           .collection('Restaurants')
-          .doc(widget.userDocId);
-      await restaurantDoc.update({
-        id: FieldValue.delete(),
+          .doc(id)
+          .delete();
+
+      // Delete the associated document from the companyCredentials collection
+      await FirebaseFirestore.instance
+          .collection('companyCredentials')
+          .doc(companyName)
+          .delete();
+
+      setState(() {
+        restaurants = fetchRestaurants();
       });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(
+                "Restaurant and associated credentials deleted successfully")),
+      );
+    } catch (e) {
+      print("Error deleting restaurant: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content:
+                Text("Failed to delete restaurant and associated credentials")),
+      );
     }
   }
 
@@ -364,9 +423,7 @@ class RestaurantDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Restaurant Details"),
-      ),
+      appBar: AppBar(),
       body: FutureBuilder<DocumentSnapshot>(
         future: FirebaseFirestore.instance
             .collection('Restaurants')
@@ -380,7 +437,7 @@ class RestaurantDetailsScreen extends StatelessWidget {
             return Center(child: Text("Error fetching details"));
           }
           if (!snapshot.hasData || snapshot.data!.data() == null) {
-            return const Center(child: Text("No details available"));
+            return Center(child: Text("No details available"));
           }
 
           var data = snapshot.data!.data() as Map<String, dynamic>? ?? {};
@@ -391,72 +448,67 @@ class RestaurantDetailsScreen extends StatelessWidget {
 
           // Safely access String fields
           String companyName = data['companyName'] as String? ?? 'No Name';
-          // String companyAddress =
-          //     data['companyAddress'] as String? ?? 'No Address';
           String aboutUs = generalInfo['aboutUs'] as String? ?? 'Not provided';
+          String collectionRadius = generalInfo['collectionRadius'] ?? '';
 
           String companyParsedAddress = parsedAddress.isNotEmpty
               ? "${parsedAddress['firstLine']}, ${parsedAddress['city']}, ${parsedAddress['country']}, ${parsedAddress['postcode']}"
               : 'No Address';
 
           // Handling List data safely
-          List<dynamic> daysOpen =
-              generalInfo['daysOpen'] as List<dynamic>? ?? [];
+          List<String> daysOpen =
+              List<String>.from(generalInfo['daysOpen'] ?? []);
+          String daysOpenStr = daysOpen.join(', ');
 
-          String collectionRadius = generalInfo['collectionRadius'] ?? '';
-
-          String daysOpenStr = daysOpen.join(
-              ', '); // This converts the list to a comma-separated string safely.
-
-          return ListView(
-            children: [
-              ListTile(
-                title: Text("Name"),
-                subtitle: Text(companyName),
-              ),
-              // ListTile(
-              //   title: Text("Address"),
-              //   subtitle: Text(companyAddress),
-              // ),
-              ListTile(
-                title: Text("About Us"),
-                subtitle: Text(aboutUs),
-              ),
-              ListTile(
-                title: Text("Collection Radius"),
-                subtitle: Text(collectionRadius),
-              ),
-              ListTile(
-                title: Text("Days Open"),
-                subtitle: Text(daysOpenStr),
-              ),
-              ListTile(
-                title: Text("Address"),
-                subtitle: Text(companyParsedAddress),
-              ),
-              //               ListTile(
-              //   title: Text("Days Open"),
-              //   subtitle: Text(daysOpenStr),
-              // ),
-              //               ListTile(
-              //   title: Text("Days Open"),
-              //   subtitle: Text(daysOpenStr),
-              // ),
-              //               ListTile(
-              //   title: Text("Days Open"),
-              //   subtitle: Text(daysOpenStr),
-              // ),
-              //               ListTile(
-              //   title: Text("Days Open"),
-              //   subtitle: Text(daysOpenStr),
-              // ),
-              //               ListTile(
-              //   title: Text("Days Open"),
-              //   subtitle: Text(daysOpenStr),
-              // ),
-
-              // Add more fields from generalInformation as required
-            ],
+          return Container(
+            margin: const EdgeInsets.symmetric(horizontal: 50, vertical: 40),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const CustomText(
+                  size: 23,
+                  text: "Restaurant Details",
+                  align: TextAlign.start,
+                  fontWeight: FontWeight.w600,
+                  textColor: blackColor,
+                ),
+                const SizedBox(height: 40),
+                ListTile(
+                  leading: Icon(Icons.restaurant),
+                  title: Text(
+                    companyName,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Divider(),
+                ListTile(
+                  leading: Icon(Icons.info),
+                  title: Text("About Us"),
+                  subtitle: Text(aboutUs),
+                ),
+                Divider(),
+                ListTile(
+                  leading: Icon(Icons.map),
+                  title: Text("Collection Radius"),
+                  subtitle: Text(collectionRadius),
+                ),
+                Divider(),
+                ListTile(
+                  leading: Icon(Icons.calendar_today),
+                  title: Text("Days Open"),
+                  subtitle: Text(daysOpenStr),
+                ),
+                Divider(),
+                ListTile(
+                  leading: Icon(Icons.location_on),
+                  title: Text("Address"),
+                  subtitle: Text(companyParsedAddress),
+                ),
+              ],
+            ),
           );
         },
       ),

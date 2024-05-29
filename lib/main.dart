@@ -7,6 +7,7 @@ import 'package:adminpanelweb/screens/overview/overview_screen.dart';
 import 'package:adminpanelweb/screens/sales/sales_screen.dart';
 import 'package:adminpanelweb/screens/view_menu_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:collection/collection.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -63,6 +64,8 @@ class _HomeState extends State<Home> {
     ];
     if (isAdministrator) {
       tabs.insert(0, 'Overview');
+      tabs.remove('General');
+      tabs.remove('Menu Upload');
       tabs.add('Registered Restaurants');
     }
 
@@ -81,8 +84,8 @@ class _HomeState extends State<Home> {
 
     List<Widget> widgets = [
       if (isAdministrator) OverviewScreen(userDocId: userDocId),
-      GeneralScreen(userDocId: userDocId),
-      MenuUploadScreen(userDocId: userDocId),
+      if (!isAdministrator) GeneralScreen(userDocId: userDocId),
+      if (!isAdministrator) MenuUploadScreen(userDocId: userDocId),
       SalesScreen(userDocId: userDocId),
       ViewSchedulePage(userDocId: userDocId),
       OrderHistoryScreen(userDocId: userDocId),
@@ -93,6 +96,7 @@ class _HomeState extends State<Home> {
     if (isLoggedIn && !isAdministrator) {
       widgets.add(ViewMenuScreen(userDocId: userDocId));
     }
+
     return widgets;
   }
 
