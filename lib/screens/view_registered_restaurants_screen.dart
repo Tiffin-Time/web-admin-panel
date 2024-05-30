@@ -398,13 +398,14 @@ class RestaurantDetailsScreen extends StatelessWidget {
   }
 
   void _navigateToMenuDetailsScreen(
-      BuildContext context, Map<String, dynamic> dishes) {
+      BuildContext context, Map<String, dynamic> dishes, String searchKey) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => RestaurantMenuDetailsScreen(
+        builder: (context) => RestaurantMenuScreen(
           restaurantId: restaurantId,
           dishes: dishes,
+          searchKey: searchKey,
         ),
       ),
     );
@@ -444,7 +445,7 @@ class RestaurantDetailsScreen extends StatelessWidget {
           String companyParsedAddress = parsedAddress.isNotEmpty
               ? "${parsedAddress['firstLine']}, ${parsedAddress['city']}, ${parsedAddress['country']}, ${parsedAddress['postcode']}"
               : 'No Address';
-
+          String searchKey = data['searchKey'] ?? 'Unknown searchKey';
           // Handling List data safely
           List<String> daysOpen =
               List<String>.from(generalInfo['daysOpen'] ?? []);
@@ -504,7 +505,7 @@ class RestaurantDetailsScreen extends StatelessWidget {
                   TextButton(
                     child: const Text("View Menu"),
                     onPressed: () {
-                      _navigateToMenuDetailsScreen(context, dishes);
+                      _navigateToMenuDetailsScreen(context, dishes, searchKey);
                     },
                   )
                 ],
@@ -517,80 +518,133 @@ class RestaurantDetailsScreen extends StatelessWidget {
   }
 }
 
-class RestaurantMenuDetailsScreen extends StatelessWidget {
+class RestaurantMenuScreen extends StatelessWidget {
   final String restaurantId;
   final Map<String, dynamic> dishes;
+  final String searchKey;
 
-  RestaurantMenuDetailsScreen(
-      {required this.restaurantId, required this.dishes});
+  RestaurantMenuScreen({
+    required this.restaurantId,
+    required this.dishes,
+    required this.searchKey,
+  });
 
-  Widget buildDishesCard(Map<String, dynamic> dish) {
+  Future<String> getDishImageUrl(
+      String searchKey, String sanitizedDishName) async {
+    String imagePath =
+        'company/images/dish_images/$searchKey/$sanitizedDishName.jpg';
+    final ref = FirebaseStorage.instance.ref().child(imagePath);
+    try {
+      return await ref.getDownloadURL();
+    } catch (e) {
+      print("Error fetching image URL: $e");
+      return 'assets/images/default.jpg'; // Default image if none found
+    }
+  }
+
+  Widget buildDishesCard(Map<String, dynamic> dish, String searchKey) {
     String dishName = dish['name'] ?? 'Unknown Dish';
     List<dynamic> allergens = dish['allergens'] ?? [];
     List<dynamic> assignTags = dish['assignTags'] ?? [];
     int comboPrice = dish['comboPrice'] ?? 0;
 
-    return Card(
-      margin: const EdgeInsets.all(4),
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              dishName,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
+    String sanitizedDishName = dishName.replaceAll(RegExp(r'\W+'), '_');
+
+    return FutureBuilder<String>(
+      future: getDishImageUrl(searchKey, sanitizedDishName),
+      builder: (context, snapshot) {
+        return Card(
+          margin: const EdgeInsets.all(4),
+          child: InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => RestaurantMenuDetailsScreen(
+                    restaurantId: restaurantId,
+                    dish: dish,
+                  ),
+                ),
+              );
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  snapshot.connectionState == ConnectionState.waiting
+                      ? const SizedBox(
+                          height: 60,
+                          child: Center(child: CircularProgressIndicator()))
+                      : ClipRRect(
+                          borderRadius: BorderRadius.circular(8.0),
+                          child: Image.network(
+                            snapshot.data!,
+                            width: double.infinity,
+                            height: 60,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Icon(Icons.error, size: 50);
+                            },
+                          ),
+                        ),
+                  const SizedBox(height: 4),
+                  Text(
+                    dishName,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    dish['description'],
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Allergens: ${allergens.join(', ')}',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                  const SizedBox(height: 2),
+                  // Text(
+                  //   'Tags: ${assignTags.join(', ')}',
+                  //   maxLines: 2,
+                  //   overflow: TextOverflow.ellipsis,
+                  //   style: const TextStyle(fontSize: 12),
+                  // ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Price: £${comboPrice.toString()}',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                  // const SizedBox(height: 2),
+                  // Text(
+                  //   'Available: ${(dish['dateAvailability'] as Map<String, dynamic>).entries.where((entry) => entry.value == true).map((entry) => entry.key).join(', ')}',
+                  //   style: const TextStyle(fontSize: 12),
+                  //   maxLines: 1,
+                  //   overflow: TextOverflow.ellipsis,
+                  // ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Type of Dish: ${(dish['typeOfDish'] as Map<String, dynamic>).entries.where((entry) => entry.value == true).map((entry) => entry.key).join(', ')}',
+                    style: const TextStyle(fontSize: 12),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
-            SizedBox(height: 4),
-            const SizedBox(height: 2),
-            Text(
-              dish['description'],
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 12),
-            ),
-            SizedBox(height: 4),
-            Text(
-              'Allergens: ${allergens.join(', ')}',
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 12),
-            ),
-            SizedBox(height: 2),
-            Text(
-              'Tags: ${assignTags.join(', ')}',
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 12),
-            ),
-            SizedBox(height: 2),
-            Text(
-              'Price: £${comboPrice.toString()}',
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 12),
-            ),
-            SizedBox(height: 2),
-            Text(
-              'Available: ${(dish['dateAvailability'] as Map<String, dynamic>).entries.where((entry) => entry.value == true).map((entry) => entry.key).join(', ')}',
-              style: const TextStyle(fontSize: 12),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            SizedBox(height: 2),
-            Text(
-              'Type of Dish: ${(dish['typeOfDish'] as Map<String, dynamic>).entries.where((entry) => entry.value == true).map((entry) => entry.key).join(', ')}',
-              style: const TextStyle(fontSize: 12),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -623,19 +677,153 @@ class RestaurantMenuDetailsScreen extends StatelessWidget {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: 150, // Adjusted for 7 columns
+                  maxCrossAxisExtent: 200,
                   crossAxisSpacing: 4.0,
                   mainAxisSpacing: 4.0,
                   childAspectRatio: 2 / 3,
                 ),
                 itemCount: dishesList.length,
                 itemBuilder: (context, index) {
-                  return buildDishesCard(dishesList[index]);
+                  return buildDishesCard(dishesList[index], searchKey);
                 },
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class RestaurantMenuDetailsScreen extends StatelessWidget {
+  final String restaurantId;
+  final Map<String, dynamic> dish;
+
+  RestaurantMenuDetailsScreen({required this.restaurantId, required this.dish});
+
+  @override
+  Widget build(BuildContext context) {
+    String dishName = dish['name'] ?? 'Unknown Dish';
+    List<dynamic> allergens = dish['allergens'] ?? [];
+    List<dynamic> assignTags = dish['assignTags'] ?? [];
+    int comboPrice = dish['comboPrice'] ?? 0;
+
+    // String sanitizedDishName = dishName.replaceAll(RegExp(r'\W+'), '_');
+
+    return Scaffold(
+      appBar: AppBar(),
+      body: FutureBuilder<DocumentSnapshot>(
+        future: FirebaseFirestore.instance
+            .collection('Restaurants')
+            .doc(restaurantId)
+            .get(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text("Error fetching details"));
+          }
+          if (!snapshot.hasData || snapshot.data!.data() == null) {
+            return Center(child: Text("No details available"));
+          }
+
+          return SingleChildScrollView(
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 50, vertical: 40),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const CustomText(
+                    size: 23,
+                    text: "Restaurant Details",
+                    align: TextAlign.start,
+                    fontWeight: FontWeight.w600,
+                    textColor: blackColor,
+                  ),
+                  const SizedBox(height: 40),
+                  ListTile(
+                    leading: Icon(Icons.fastfood),
+                    title: Text(
+                      dishName,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    subtitle: Text(
+                      dish['description'],
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const Divider(),
+                  ListTile(
+                    leading: Icon(Icons.warning),
+                    title: Text('Allergens'),
+                    subtitle: Text(
+                      allergens.join(', '),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const Divider(),
+                  ListTile(
+                    leading: Icon(Icons.tag),
+                    title: Text('Tags'),
+                    subtitle: Text(
+                      assignTags.join(', '),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const Divider(),
+                  ListTile(
+                    leading: Icon(Icons.attach_money),
+                    title: Text('Price'),
+                    subtitle: Text(
+                      '£${comboPrice.toString()}',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const Divider(),
+                  ListTile(
+                    leading: Icon(Icons.calendar_today),
+                    title: Text('Available'),
+                    subtitle: Text(
+                      (dish['dateAvailability'] as Map<String, dynamic>)
+                          .entries
+                          .where((entry) => entry.value == true)
+                          .map((entry) => entry.key)
+                          .join(', '),
+                      // style: const TextStyle(fontSize: 12),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const Divider(),
+                  ListTile(
+                    leading: Icon(Icons.restaurant_menu),
+                    title: Text('Type of Dish'),
+                    subtitle: Text(
+                      (dish['typeOfDish'] as Map<String, dynamic>)
+                          .entries
+                          .where((entry) => entry.value == true)
+                          .map((entry) => entry.key)
+                          .join(', '),
+                      // style: const TextStyle(fontSize: 12),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const Divider(),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
