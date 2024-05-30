@@ -397,7 +397,7 @@ class RestaurantDetailsScreen extends StatelessWidget {
     }
   }
 
-  void _navigateToMenuDetailsScreen(
+  void _navigateToMenuScreen(
       BuildContext context, Map<String, dynamic> dishes, String searchKey) {
     Navigator.push(
       context,
@@ -411,10 +411,35 @@ class RestaurantDetailsScreen extends StatelessWidget {
     );
   }
 
+  void _navigateToEditScreen(BuildContext context, Map<String, dynamic> data) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditRestaurantDetailsScreen(
+          restaurantId: restaurantId,
+          restaurantData: data,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(
+        actions: [
+          IconButton(
+            icon: Icon(Icons.edit),
+            onPressed: () async {
+              Map<String, dynamic>? restaurantData =
+                  await getRestaurantData(restaurantId);
+              if (restaurantData != null) {
+                _navigateToEditScreen(context, restaurantData);
+              }
+            },
+          ),
+        ],
+      ),
       body: FutureBuilder<DocumentSnapshot>(
         future: FirebaseFirestore.instance
             .collection('Restaurants')
@@ -505,7 +530,7 @@ class RestaurantDetailsScreen extends StatelessWidget {
                   TextButton(
                     child: const Text("View Menu"),
                     onPressed: () {
-                      _navigateToMenuDetailsScreen(context, dishes, searchKey);
+                      _navigateToMenuScreen(context, dishes, searchKey);
                     },
                   )
                 ],
@@ -701,6 +726,18 @@ class RestaurantMenuDetailsScreen extends StatelessWidget {
 
   RestaurantMenuDetailsScreen({required this.restaurantId, required this.dish});
 
+  void _navigateToEditScreen(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditDishDetailsScreen(
+          restaurantId: restaurantId,
+          dish: dish,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     String dishName = dish['name'] ?? 'Unknown Dish';
@@ -711,7 +748,16 @@ class RestaurantMenuDetailsScreen extends StatelessWidget {
     // String sanitizedDishName = dishName.replaceAll(RegExp(r'\W+'), '_');
 
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(
+        actions: [
+          IconButton(
+            icon: Icon(Icons.edit),
+            onPressed: () {
+              _navigateToEditScreen(context);
+            },
+          ),
+        ],
+      ),
       body: FutureBuilder<DocumentSnapshot>(
         future: FirebaseFirestore.instance
             .collection('Restaurants')
@@ -736,7 +782,7 @@ class RestaurantMenuDetailsScreen extends StatelessWidget {
                 children: [
                   const CustomText(
                     size: 23,
-                    text: "Restaurant Details",
+                    text: "Dish Details",
                     align: TextAlign.start,
                     fontWeight: FontWeight.w600,
                     textColor: blackColor,
@@ -824,6 +870,269 @@ class RestaurantMenuDetailsScreen extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class EditDishDetailsScreen extends StatefulWidget {
+  final String restaurantId;
+  final Map<String, dynamic> dish;
+
+  EditDishDetailsScreen({required this.restaurantId, required this.dish});
+
+  @override
+  _EditDishDetailsScreenState createState() => _EditDishDetailsScreenState();
+}
+
+class _EditDishDetailsScreenState extends State<EditDishDetailsScreen> {
+  late TextEditingController nameController;
+  late TextEditingController descriptionController;
+  late TextEditingController priceController;
+  late TextEditingController allergensController;
+  late TextEditingController tagsController;
+  Map<String, dynamic> dateAvailability = {};
+  Map<String, dynamic> typeOfDish = {};
+
+  @override
+  void initState() {
+    super.initState();
+    nameController = TextEditingController(text: widget.dish['name']);
+    descriptionController =
+        TextEditingController(text: widget.dish['description']);
+    priceController =
+        TextEditingController(text: widget.dish['comboPrice'].toString());
+    allergensController =
+        TextEditingController(text: widget.dish['allergens'].join(', '));
+    tagsController =
+        TextEditingController(text: widget.dish['assignTags'].join(', '));
+    dateAvailability =
+        Map<String, dynamic>.from(widget.dish['dateAvailability']);
+    typeOfDish = Map<String, dynamic>.from(widget.dish['typeOfDish']);
+  }
+
+  Future<void> saveDishDetails() async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('Restaurants')
+          .doc(widget.restaurantId)
+          .update({
+        'dishes.${widget.dish['name']}': {
+          'name': nameController.text,
+          'description': descriptionController.text,
+          'comboPrice': int.parse(priceController.text),
+          'allergens':
+              allergensController.text.split(',').map((e) => e.trim()).toList(),
+          'assignTags':
+              tagsController.text.split(',').map((e) => e.trim()).toList(),
+          'dateAvailability': dateAvailability,
+          'typeOfDish': typeOfDish,
+        }
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Dish details updated successfully')),
+      );
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to update dish details: $e')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Edit Dish'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.save),
+            onPressed: saveDishDetails,
+          ),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: ListView(
+          children: [
+            TextField(
+              controller: nameController,
+              decoration: InputDecoration(labelText: 'Dish Name'),
+            ),
+            TextField(
+              controller: descriptionController,
+              decoration: InputDecoration(labelText: 'Description'),
+            ),
+            TextField(
+              controller: priceController,
+              decoration: InputDecoration(labelText: 'Price'),
+              keyboardType: TextInputType.number,
+            ),
+            TextField(
+              controller: allergensController,
+              decoration:
+                  InputDecoration(labelText: 'Allergens (comma separated)'),
+            ),
+            TextField(
+              controller: tagsController,
+              decoration: InputDecoration(labelText: 'Tags (comma separated)'),
+            ),
+            const SizedBox(height: 16),
+            Text('Date Availability'),
+            ...dateAvailability.keys.map((day) {
+              return CheckboxListTile(
+                title: Text(day),
+                value: dateAvailability[day],
+                onChanged: (value) {
+                  setState(() {
+                    dateAvailability[day] = value;
+                  });
+                },
+              );
+            }).toList(),
+            const SizedBox(height: 16),
+            Text('Type of Dish'),
+            ...typeOfDish.keys.map((type) {
+              return CheckboxListTile(
+                title: Text(type),
+                value: typeOfDish[type],
+                onChanged: (value) {
+                  setState(() {
+                    typeOfDish[type] = value;
+                  });
+                },
+              );
+            }).toList(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class EditRestaurantDetailsScreen extends StatefulWidget {
+  final String restaurantId;
+  final Map<String, dynamic> restaurantData;
+
+  EditRestaurantDetailsScreen(
+      {required this.restaurantId, required this.restaurantData});
+
+  @override
+  _EditRestaurantDetailsScreenState createState() =>
+      _EditRestaurantDetailsScreenState();
+}
+
+class _EditRestaurantDetailsScreenState
+    extends State<EditRestaurantDetailsScreen> {
+  late TextEditingController nameController;
+  late TextEditingController aboutUsController;
+  late TextEditingController collectionRadiusController;
+  late TextEditingController addressController;
+  List<String> daysOpen = [];
+
+  @override
+  void initState() {
+    super.initState();
+    nameController =
+        TextEditingController(text: widget.restaurantData['companyName']);
+    aboutUsController = TextEditingController(
+        text: widget.restaurantData['generalInformation']['aboutUs']);
+    collectionRadiusController = TextEditingController(
+        text: widget.restaurantData['generalInformation']['collectionRadius']);
+    addressController = TextEditingController(
+        text: (widget.restaurantData['generalInformation']['address']
+                as Map<String, dynamic>)
+            .values
+            .join(', '));
+    daysOpen = List<String>.from(
+        widget.restaurantData['generalInformation']['daysOpen'] ?? []);
+  }
+
+  Future<void> saveRestaurantDetails() async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('Restaurants')
+          .doc(widget.restaurantId)
+          .update({
+        'companyName': nameController.text,
+        'generalInformation.aboutUs': aboutUsController.text,
+        'generalInformation.collectionRadius': collectionRadiusController.text,
+        'generalInformation.address':
+            addressController.text.split(',').map((e) => e.trim()).toList(),
+        'generalInformation.daysOpen': daysOpen,
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Restaurant details updated successfully')),
+      );
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to update restaurant details: $e')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Edit Restaurant'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.save),
+            onPressed: saveRestaurantDetails,
+          ),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: ListView(
+          children: [
+            TextField(
+              controller: nameController,
+              decoration: InputDecoration(labelText: 'Restaurant Name'),
+            ),
+            TextField(
+              controller: aboutUsController,
+              decoration: InputDecoration(labelText: 'About Us'),
+            ),
+            TextField(
+              controller: collectionRadiusController,
+              decoration: InputDecoration(labelText: 'Collection Radius'),
+            ),
+            TextField(
+              controller: addressController,
+              decoration:
+                  InputDecoration(labelText: 'Address (comma separated)'),
+            ),
+            const SizedBox(height: 16),
+            Text('Days Open'),
+            ...[
+              'Monday',
+              'Tuesday',
+              'Wednesday',
+              'Thursday',
+              'Friday',
+              'Saturday',
+              'Sunday'
+            ].map((day) {
+              return CheckboxListTile(
+                title: Text(day),
+                value: daysOpen.contains(day),
+                onChanged: (value) {
+                  setState(() {
+                    if (value == true) {
+                      daysOpen.add(day);
+                    } else {
+                      daysOpen.remove(day);
+                    }
+                  });
+                },
+              );
+            }).toList(),
+          ],
+        ),
       ),
     );
   }
