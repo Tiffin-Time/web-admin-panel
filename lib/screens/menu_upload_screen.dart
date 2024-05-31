@@ -30,7 +30,10 @@ class MenuUploadScreen extends StatefulWidget {
 
 class _MenuUploadScreenState extends State<MenuUploadScreen> {
   bool isSubscriptionService = false;
-  String dishTypeValue = 'Main';
+  Map<String, bool> dishTypeValue = {
+    'Main': true,
+    'Extra': false,
+  };
   String combowithAnotherDishValue = '01';
   List<bool> isSelected = List.generate(7, (_) => false);
   List<Dish> dishes = [];
@@ -673,17 +676,21 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
                                   child: DropdownButtonHideUnderline(
                                     child: DropdownButton<String>(
                                       isExpanded: true,
-                                      value: dishTypeValue,
+                                      value: dishTypeValue.keys.firstWhere(
+                                          (k) => dishTypeValue[k] == true),
                                       onChanged: (String? newValue) {
                                         setState(() {
-                                          dishTypeValue = newValue!;
+                                          if (newValue != null) {
+                                            dishTypeValue.updateAll(
+                                                (key, value) =>
+                                                    dishTypeValue[key] =
+                                                        (key == newValue));
+                                          }
                                         });
                                       },
-                                      items: <String>[
-                                        'Main',
-                                        'Extra',
-                                      ].map<DropdownMenuItem<String>>(
-                                          (String value) {
+                                      items: <String>['Main', 'Extra']
+                                          .map<DropdownMenuItem<String>>(
+                                              (String value) {
                                         return DropdownMenuItem<String>(
                                           value: value,
                                           child: Text(value),
@@ -692,6 +699,39 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
                                     ),
                                   ),
                                 ),
+
+                                // Container(
+                                //   padding: const EdgeInsets.symmetric(
+                                //       horizontal: 10.0),
+                                //   decoration: BoxDecoration(
+                                //     borderRadius: BorderRadius.circular(20),
+                                //     border: Border.all(
+                                //       color: Colors.grey,
+                                //       width: 1.0,
+                                //     ),
+                                //   ),
+                                //   child: DropdownButtonHideUnderline(
+                                //     child: DropdownButton<String>(
+                                //       isExpanded: true,
+                                //       value: dishTypeValue,
+                                //       onChanged: (String? newValue) {
+                                //         setState(() {
+                                //           dishTypeValue = newValue!;
+                                //         });
+                                //       },
+                                //       items: <String>[
+                                //         'Main',
+                                //         'Extra',
+                                //       ].map<DropdownMenuItem<String>>(
+                                //           (String value) {
+                                //         return DropdownMenuItem<String>(
+                                //           value: value,
+                                //           child: Text(value),
+                                //         );
+                                //       }).toList(),
+                                //     ),
+                                //   ),
+                                // ),
                                 const Gap(20),
                                 const CustomText(
                                     size: 16,
@@ -1130,7 +1170,7 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
                       DateTime now = DateTime.now();
 
                       // Check if today is Sunday and the current time is between 3 PM and 5 PM
-                      bool isSunday = now.weekday == DateTime.tuesday;
+                      bool isSunday = now.weekday == DateTime.friday;
                       bool isBetween3And5PM = (now.hour >= 1 && now.hour < 23);
 
                       if (!(isSunday && isBetween3And5PM)) {

@@ -570,10 +570,16 @@ class RestaurantMenuScreen extends StatelessWidget {
   Widget buildDishesCard(Map<String, dynamic> dish, String searchKey) {
     String dishName = dish['name'] ?? 'Unknown Dish';
     List<dynamic> allergens = dish['allergens'] ?? [];
-    List<dynamic> assignTags = dish['assignTags'] ?? [];
+    // List<dynamic> assignTags = dish['assignTags'] ?? [];
     int comboPrice = dish['comboPrice'] ?? 0;
 
     String sanitizedDishName = dishName.replaceAll(RegExp(r'\W+'), '_');
+
+    String typeOfDishStr = (dish['typeOfDish'] as Map<String, dynamic>)
+        .entries
+        .where((entry) => entry.value == true)
+        .map((entry) => entry.key)
+        .join(', ');
 
     return FutureBuilder<String>(
       future: getDishImageUrl(searchKey, sanitizedDishName),
@@ -660,7 +666,7 @@ class RestaurantMenuScreen extends StatelessWidget {
                   // ),
                   const SizedBox(height: 2),
                   Text(
-                    'Type of Dish: ${(dish['typeOfDish'] as Map<String, dynamic>).entries.where((entry) => entry.value == true).map((entry) => entry.key).join(', ')}',
+                    'Type of Dish: $typeOfDishStr',
                     style: const TextStyle(fontSize: 12),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -744,7 +750,11 @@ class RestaurantMenuDetailsScreen extends StatelessWidget {
     List<dynamic> allergens = dish['allergens'] ?? [];
     List<dynamic> assignTags = dish['assignTags'] ?? [];
     int comboPrice = dish['comboPrice'] ?? 0;
-
+    String typeOfDishStr = (dish['typeOfDish'] as Map<String, dynamic>)
+        .entries
+        .where((entry) => entry.value == true)
+        .map((entry) => entry.key)
+        .join(', ');
     // String sanitizedDishName = dishName.replaceAll(RegExp(r'\W+'), '_');
 
     return Scaffold(
@@ -855,12 +865,8 @@ class RestaurantMenuDetailsScreen extends StatelessWidget {
                     leading: Icon(Icons.restaurant_menu),
                     title: Text('Type of Dish'),
                     subtitle: Text(
-                      (dish['typeOfDish'] as Map<String, dynamic>)
-                          .entries
-                          .where((entry) => entry.value == true)
-                          .map((entry) => entry.key)
-                          .join(', '),
-                      // style: const TextStyle(fontSize: 12),
+                      typeOfDishStr,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),

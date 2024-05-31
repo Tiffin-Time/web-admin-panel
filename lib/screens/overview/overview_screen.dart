@@ -416,14 +416,17 @@ class _OverviewScreenState extends State<OverviewScreen> {
       );
       return; // Exit if the company name already exists
     }
-    // Generate a searchKey by removing non-alphabetic characters and converting to lowercase
-    String normalized =
-        companyName.toLowerCase().replaceAll(RegExp(r'[^a-z]+'), '');
-    String hash = md5
-        .convert(utf8.encode(companyName))
-        .toString()
-        .substring(0, 6); // Short hash
-    String searchKey = "$normalized-$hash";
+    // Generate a searchKey by removing non-alphabetic characters and converting to lowercase //TODO: LOOK INTO THIS
+    // String normalized =
+    //     companyName.toLowerCase().replaceAll(RegExp(r'[^a-z]+'), '');
+    // String hash = md5
+    //     .convert(utf8.encode(companyName))
+    //     .toString()
+    //     .substring(0, 6); // Short hash
+    // String searchKey = "$normalized-$hash";
+
+    String searchKey =
+        companyName.toLowerCase().replaceAll(RegExp(r'[^a-zA-Z]+'), '');
 
     // Check for existing company registration using searchKey
     QuerySnapshot querySnapshot = await firestore

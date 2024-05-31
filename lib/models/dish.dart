@@ -4,7 +4,7 @@ class Dish {
   final String name;
   final String description;
   final double price;
-  final String typeOfDish;
+  final Map<String, bool> typeOfDish;
   final List assignTags;
   final String comboWithAnotherDish;
   final double comboPrice;
@@ -31,9 +31,7 @@ class Dish {
       'name': name,
       'description': description,
       'price': price,
-      'typeOfDish': {
-        typeOfDish: true,
-      },
+      'typeOfDish': typeOfDish,
       'assignTags': assignTags,
       'comboWithAnotherDish': comboWithAnotherDish,
       'comboPrice': comboPrice,
