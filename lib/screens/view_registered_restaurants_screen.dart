@@ -404,7 +404,7 @@ class RestaurantDetailsScreen extends StatelessWidget {
       MaterialPageRoute(
         builder: (context) => RestaurantMenuScreen(
           restaurantId: restaurantId,
-          dishes: dishes,
+          // dishes: dishes,
           searchKey: searchKey,
         ),
       ),
@@ -565,14 +565,29 @@ class RestaurantDetailsScreen extends StatelessWidget {
 
 class RestaurantMenuScreen extends StatelessWidget {
   final String restaurantId;
-  final Map<String, dynamic> dishes;
   final String searchKey;
 
   RestaurantMenuScreen({
     required this.restaurantId,
-    required this.dishes,
     required this.searchKey,
   });
+
+  Stream<List<Map<String, dynamic>>> fetchDishes() {
+    return FirebaseFirestore.instance
+        .collection('Restaurants')
+        .doc(restaurantId)
+        .snapshots()
+        .map((snapshot) {
+      var data = snapshot.data() as Map<String, dynamic>?;
+      var dishes = data?['dishes'] as Map<String, dynamic>? ?? {};
+      return dishes.entries.map((entry) {
+        return {
+          'name': entry.key,
+          ...entry.value as Map<String, dynamic>,
+        };
+      }).toList();
+    });
+  }
 
   Future<String> getDishImageUrl(
       String searchKey, String sanitizedDishName) async {
@@ -590,9 +605,7 @@ class RestaurantMenuScreen extends StatelessWidget {
   Widget buildDishesCard(Map<String, dynamic> dish, String searchKey) {
     String dishName = dish['name'] ?? 'Unknown Dish';
     List<dynamic> allergens = dish['allergens'] ?? [];
-    // List<dynamic> assignTags = dish['assignTags'] ?? [];
     int comboPrice = dish['comboPrice'] ?? 0;
-
     String sanitizedDishName = dishName.replaceAll(RegExp(r'\W+'), '_');
 
     String typeOfDishStr = (dish['typeOfDish'] as Map<String, dynamic>)
@@ -616,7 +629,11 @@ class RestaurantMenuScreen extends StatelessWidget {
                     dish: dish,
                   ),
                 ),
-              );
+              ).then((value) {
+                if (value == true) {
+                  (context as Element).markNeedsBuild();
+                }
+              });
             },
             child: Padding(
               padding: const EdgeInsets.all(8),
@@ -664,26 +681,12 @@ class RestaurantMenuScreen extends StatelessWidget {
                     style: const TextStyle(fontSize: 12),
                   ),
                   const SizedBox(height: 2),
-                  // Text(
-                  //   'Tags: ${assignTags.join(', ')}',
-                  //   maxLines: 2,
-                  //   overflow: TextOverflow.ellipsis,
-                  //   style: const TextStyle(fontSize: 12),
-                  // ),
-                  const SizedBox(height: 2),
                   Text(
                     'Price: £${comboPrice.toString()}',
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontSize: 12),
                   ),
-                  // const SizedBox(height: 2),
-                  // Text(
-                  //   'Available: ${(dish['dateAvailability'] as Map<String, dynamic>).entries.where((entry) => entry.value == true).map((entry) => entry.key).join(', ')}',
-                  //   style: const TextStyle(fontSize: 12),
-                  //   maxLines: 1,
-                  //   overflow: TextOverflow.ellipsis,
-                  // ),
                   const SizedBox(height: 2),
                   Text(
                     'Type of Dish: $typeOfDishStr',
@@ -701,13 +704,6 @@ class RestaurantMenuScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    List<Map<String, dynamic>> dishesList = dishes.entries.map((entry) {
-      return {
-        'name': entry.key,
-        ...entry.value as Map<String, dynamic>,
-      };
-    }).toList();
-
     return Scaffold(
       appBar: AppBar(),
       body: SingleChildScrollView(
@@ -724,18 +720,36 @@ class RestaurantMenuScreen extends StatelessWidget {
                 textColor: blackColor,
               ),
               const SizedBox(height: 40),
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: 200,
-                  crossAxisSpacing: 4.0,
-                  mainAxisSpacing: 4.0,
-                  childAspectRatio: 2 / 3,
-                ),
-                itemCount: dishesList.length,
-                itemBuilder: (context, index) {
-                  return buildDishesCard(dishesList[index], searchKey);
+              StreamBuilder<List<Map<String, dynamic>>>(
+                stream: fetchDishes(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    return Center(child: Text("Error fetching dishes"));
+                  }
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return Center(child: Text("No dishes available"));
+                  }
+
+                  var dishesList = snapshot.data!;
+
+                  return GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate:
+                        const SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: 200,
+                      crossAxisSpacing: 4.0,
+                      mainAxisSpacing: 4.0,
+                      childAspectRatio: 2 / 3,
+                    ),
+                    itemCount: dishesList.length,
+                    itemBuilder: (context, index) {
+                      return buildDishesCard(dishesList[index], searchKey);
+                    },
+                  );
                 },
               ),
             ],
@@ -752,13 +766,35 @@ class RestaurantMenuDetailsScreen extends StatelessWidget {
 
   RestaurantMenuDetailsScreen({required this.restaurantId, required this.dish});
 
-  void _navigateToEditScreen(BuildContext context) {
+  Future<Map<String, dynamic>?> getDishData(
+      String restaurantId, String dishName) async {
+    try {
+      DocumentSnapshot snapshot = await FirebaseFirestore.instance
+          .collection('Restaurants')
+          .doc(restaurantId)
+          .get();
+
+      if (snapshot.exists) {
+        var data = snapshot.data() as Map<String, dynamic>?;
+        var dishes = data?['dishes'] as Map<String, dynamic>?;
+        return dishes?[dishName] as Map<String, dynamic>?;
+      } else {
+        return null;
+      }
+    } catch (e) {
+      print("Error fetching dish data: $e");
+      return null;
+    }
+  }
+
+  void _navigateToEditScreen(
+      BuildContext context, Map<String, dynamic> dishData) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => EditDishDetailsScreen(
           restaurantId: restaurantId,
-          dish: dish,
+          dish: dishData,
           onSave: () {
             Navigator.pop(
                 context, true); // Notify parent screen to refresh data
@@ -791,8 +827,12 @@ class RestaurantMenuDetailsScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: Icon(Icons.edit),
-            onPressed: () {
-              _navigateToEditScreen(context);
+            onPressed: () async {
+              Map<String, dynamic>? dishData =
+                  await getDishData(restaurantId, dishName);
+              if (dishData != null) {
+                _navigateToEditScreen(context, dishData);
+              }
             },
           ),
         ],
@@ -1100,10 +1140,12 @@ class _EditRestaurantDetailsScreenState
     daysOpen = List<String>.from(
         widget.restaurantData['generalInformation']['daysOpen'] ?? []);
 
-    bankNameController = TextEditingController(text: bankDetails['']);
-    sortCodeController = TextEditingController(text: bankDetails['']);
-    accountNumberController = TextEditingController(text: bankDetails['']);
-    businessNameController = TextEditingController(text: bankDetails['']);
+    bankNameController = TextEditingController(text: bankDetails['bankName']);
+    sortCodeController = TextEditingController(text: bankDetails['sortCode']);
+    accountNumberController =
+        TextEditingController(text: bankDetails['accountNumber']);
+    businessNameController =
+        TextEditingController(text: bankDetails['businessName']);
   }
 
   Future<void> saveRestaurantDetails() async {
