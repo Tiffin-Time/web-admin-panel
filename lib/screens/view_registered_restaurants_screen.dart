@@ -1,5 +1,5 @@
-import 'dart:html';
-
+// import 'dart:html';
+import 'dart:html' hide VoidCallback;
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -418,9 +418,18 @@ class RestaurantDetailsScreen extends StatelessWidget {
         builder: (context) => EditRestaurantDetailsScreen(
           restaurantId: restaurantId,
           restaurantData: data,
+          onSave: () {
+            Navigator.pop(
+                context, true); // Notify parent screen to refresh data
+          },
         ),
       ),
-    );
+    ).then((value) {
+      if (value == true) {
+        // Call setState to refresh data when returning from edit screen
+        (context as Element).markNeedsBuild();
+      }
+    });
   }
 
   @override
@@ -466,10 +475,15 @@ class RestaurantDetailsScreen extends StatelessWidget {
           String companyName = data['companyName'] as String? ?? 'No Name';
           String aboutUs = generalInfo['aboutUs'] as String? ?? 'Not provided';
           String collectionRadius = generalInfo['collectionRadius'] ?? '';
+          var bankDeatails = data['bankDetails'] as Map<String, dynamic>? ?? {};
 
           String companyParsedAddress = parsedAddress.isNotEmpty
               ? "${parsedAddress['firstLine']}, ${parsedAddress['city']}, ${parsedAddress['country']}, ${parsedAddress['postcode']}"
               : 'No Address';
+          String companyParsedBankDetails = bankDeatails.isNotEmpty
+              ? "${bankDeatails['accountNumber']}, ${bankDeatails['bankName']}, ${bankDeatails['businessName']}, ${bankDeatails['sortCode']}"
+              : 'No Bank Account';
+
           String searchKey = data['searchKey'] ?? 'Unknown searchKey';
           // Handling List data safely
           List<String> daysOpen =
@@ -523,8 +537,14 @@ class RestaurantDetailsScreen extends StatelessWidget {
                   Divider(),
                   ListTile(
                     leading: Icon(Icons.location_on),
-                    title: Text("Address"),
+                    title: Text("Parsed Address"),
                     subtitle: Text(companyParsedAddress),
+                  ),
+                  Divider(),
+                  ListTile(
+                    leading: Icon(Icons.account_box),
+                    title: Text("Parsed Bank Account"),
+                    subtitle: Text(companyParsedBankDetails),
                   ),
                   Divider(),
                   TextButton(
@@ -739,9 +759,18 @@ class RestaurantMenuDetailsScreen extends StatelessWidget {
         builder: (context) => EditDishDetailsScreen(
           restaurantId: restaurantId,
           dish: dish,
+          onSave: () {
+            Navigator.pop(
+                context, true); // Notify parent screen to refresh data
+          },
         ),
       ),
-    );
+    ).then((value) {
+      if (value == true) {
+        // Call setState to refresh data when returning from edit screen
+        (context as Element).markNeedsBuild();
+      }
+    });
   }
 
   @override
@@ -884,8 +913,10 @@ class RestaurantMenuDetailsScreen extends StatelessWidget {
 class EditDishDetailsScreen extends StatefulWidget {
   final String restaurantId;
   final Map<String, dynamic> dish;
+  final VoidCallback onSave;
 
-  EditDishDetailsScreen({required this.restaurantId, required this.dish});
+  EditDishDetailsScreen(
+      {required this.restaurantId, required this.dish, required this.onSave});
 
   @override
   _EditDishDetailsScreenState createState() => _EditDishDetailsScreenState();
@@ -938,6 +969,7 @@ class _EditDishDetailsScreenState extends State<EditDishDetailsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Dish details updated successfully')),
       );
+      widget.onSave(); // Notify the parent widget
       Navigator.pop(context);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1020,9 +1052,13 @@ class _EditDishDetailsScreenState extends State<EditDishDetailsScreen> {
 class EditRestaurantDetailsScreen extends StatefulWidget {
   final String restaurantId;
   final Map<String, dynamic> restaurantData;
+  final VoidCallback onSave;
 
-  EditRestaurantDetailsScreen(
-      {required this.restaurantId, required this.restaurantData});
+  EditRestaurantDetailsScreen({
+    required this.restaurantId,
+    required this.restaurantData,
+    required this.onSave,
+  });
 
   @override
   _EditRestaurantDetailsScreenState createState() =>
@@ -1034,7 +1070,14 @@ class _EditRestaurantDetailsScreenState
   late TextEditingController nameController;
   late TextEditingController aboutUsController;
   late TextEditingController collectionRadiusController;
-  late TextEditingController addressController;
+  late TextEditingController cityController;
+  late TextEditingController countryController;
+  late TextEditingController firstLineController;
+  late TextEditingController postcodeController;
+  late TextEditingController bankNameController;
+  late TextEditingController sortCodeController;
+  late TextEditingController accountNumberController;
+  late TextEditingController businessNameController;
   List<String> daysOpen = [];
 
   @override
@@ -1046,13 +1089,21 @@ class _EditRestaurantDetailsScreenState
         text: widget.restaurantData['generalInformation']['aboutUs']);
     collectionRadiusController = TextEditingController(
         text: widget.restaurantData['generalInformation']['collectionRadius']);
-    addressController = TextEditingController(
-        text: (widget.restaurantData['generalInformation']['address']
-                as Map<String, dynamic>)
-            .values
-            .join(', '));
+    var address = widget.restaurantData['generalInformation']['address']
+        as Map<String, dynamic>;
+    var bankDetails =
+        widget.restaurantData['bankDetails'] as Map<String, dynamic>;
+    cityController = TextEditingController(text: address['city']);
+    countryController = TextEditingController(text: address['country']);
+    firstLineController = TextEditingController(text: address['firstLine']);
+    postcodeController = TextEditingController(text: address['postcode']);
     daysOpen = List<String>.from(
         widget.restaurantData['generalInformation']['daysOpen'] ?? []);
+
+    bankNameController = TextEditingController(text: bankDetails['']);
+    sortCodeController = TextEditingController(text: bankDetails['']);
+    accountNumberController = TextEditingController(text: bankDetails['']);
+    businessNameController = TextEditingController(text: bankDetails['']);
   }
 
   Future<void> saveRestaurantDetails() async {
@@ -1064,13 +1115,24 @@ class _EditRestaurantDetailsScreenState
         'companyName': nameController.text,
         'generalInformation.aboutUs': aboutUsController.text,
         'generalInformation.collectionRadius': collectionRadiusController.text,
-        'generalInformation.address':
-            addressController.text.split(',').map((e) => e.trim()).toList(),
+        'generalInformation.address': {
+          'city': cityController.text,
+          'country': countryController.text,
+          'firstLine': firstLineController.text,
+          'postcode': postcodeController.text,
+        },
         'generalInformation.daysOpen': daysOpen,
+        'bankDetails': {
+          'accountNumber': accountNumberController.text,
+          'bankName': bankNameController.text,
+          'businessName': businessNameController.text,
+          'sortCode': sortCodeController.text,
+        },
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Restaurant details updated successfully')),
       );
+      widget.onSave(); // Notify the parent widget
       Navigator.pop(context);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1108,21 +1170,40 @@ class _EditRestaurantDetailsScreenState
               decoration: InputDecoration(labelText: 'Collection Radius'),
             ),
             TextField(
-              controller: addressController,
-              decoration:
-                  InputDecoration(labelText: 'Address (comma separated)'),
+              controller: firstLineController,
+              decoration: InputDecoration(labelText: 'Address Line 1'),
+            ),
+            TextField(
+              controller: cityController,
+              decoration: InputDecoration(labelText: 'City'),
+            ),
+            TextField(
+              controller: countryController,
+              decoration: InputDecoration(labelText: 'Country'),
+            ),
+            TextField(
+              controller: postcodeController,
+              decoration: InputDecoration(labelText: 'Postcode'),
+            ),
+            TextField(
+              controller: accountNumberController,
+              decoration: InputDecoration(labelText: 'Account Number'),
+            ),
+            TextField(
+              controller: sortCodeController,
+              decoration: InputDecoration(labelText: 'Sort Code'),
+            ),
+            TextField(
+              controller: bankNameController,
+              decoration: InputDecoration(labelText: 'Bank Name'),
+            ),
+            TextField(
+              controller: businessNameController,
+              decoration: InputDecoration(labelText: 'Business Name'),
             ),
             const SizedBox(height: 16),
             Text('Days Open'),
-            ...[
-              'Monday',
-              'Tuesday',
-              'Wednesday',
-              'Thursday',
-              'Friday',
-              'Saturday',
-              'Sunday'
-            ].map((day) {
+            ...['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) {
               return CheckboxListTile(
                 title: Text(day),
                 value: daysOpen.contains(day),

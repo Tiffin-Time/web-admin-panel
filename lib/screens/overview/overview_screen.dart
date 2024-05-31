@@ -330,38 +330,38 @@ class _OverviewScreenState extends State<OverviewScreen> {
     );
   }
 
-  void downloadCSV() {
-    List<List<dynamic>> rows = [];
+  // void downloadCSV() {
+  //   List<List<dynamic>> rows = [];
 
-    rows.add(['Registration Informations']);
-    rows.add(['']);
+  //   rows.add(['Registration Informations']);
+  //   rows.add(['']);
 
-    rows.add(['Name', '', '', companyNameController.text]);
-    rows.add(['NI Number', '', '', niNumberController.text]);
-    rows.add(['Company Number', '', '', companyNumberController.text]);
-    rows.add(['Bank Details', '', '', bankDetailsController.text]);
-    rows.add(['Company Address', '', '', companyAddressController.text]);
-    rows.add(['Signed Contract PDF', '', '', _selectedFile?.name ?? '']);
-    rows.add([
-      'Food Safety Certificate',
-      '',
-      '',
-      _foodCetificateFile?.map((e) => e.name).join(', ') ?? ''
-    ]);
+  //   rows.add(['Name', '', '', companyNameController.text]);
+  //   rows.add(['NI Number', '', '', niNumberController.text]);
+  //   rows.add(['Company Number', '', '', companyNumberController.text]);
+  //   rows.add(['Bank Details', '', '', bankDetailsController.text]);
+  //   rows.add(['Company Address', '', '', companyAddressController.text]);
+  //   rows.add(['Signed Contract PDF', '', '', _selectedFile?.name ?? '']);
+  //   rows.add([
+  //     'Food Safety Certificate',
+  //     '',
+  //     '',
+  //     _foodCetificateFile?.map((e) => e.name).join(', ') ?? ''
+  //   ]);
 
-    String csv = const ListToCsvConverter().convert(rows);
-    final bytes = utf8.encode(csv);
-    final blob = html.Blob([bytes]);
-    final url = html.Url.createObjectUrlFromBlob(blob);
-    final anchor = html.document.createElement('a') as html.AnchorElement
-      ..href = url
-      ..style.display = 'none'
-      ..download = 'company_reg.csv';
-    html.document.body!.children.add(anchor);
-    anchor.click();
-    html.document.body!.children.remove(anchor);
-    html.Url.revokeObjectUrl(url);
-  }
+  //   String csv = const ListToCsvConverter().convert(rows);
+  //   final bytes = utf8.encode(csv);
+  //   final blob = html.Blob([bytes]);
+  //   final url = html.Url.createObjectUrlFromBlob(blob);
+  //   final anchor = html.document.createElement('a') as html.AnchorElement
+  //     ..href = url
+  //     ..style.display = 'none'
+  //     ..download = 'company_reg.csv';
+  //   html.document.body!.children.add(anchor);
+  //   anchor.click();
+  //   html.document.body!.children.remove(anchor);
+  //   html.Url.revokeObjectUrl(url);
+  // }
 
   Future<void> registerCompany() async {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
