@@ -1152,6 +1152,7 @@ class _EditDishDetailsScreenState extends State<EditDishDetailsScreen> {
             TextField(
               controller: nameController,
               decoration: InputDecoration(labelText: 'Dish Name'),
+              enabled: false,
             ),
             TextField(
               controller: descriptionController,
@@ -1419,6 +1420,7 @@ class _EditRestaurantDetailsScreenState
             TextField(
               controller: nameController,
               decoration: InputDecoration(labelText: 'Restaurant Name'),
+              enabled: false,
             ),
             TextField(
               controller: aboutUsController,
