@@ -605,7 +605,7 @@ class RestaurantDetailsScreen extends StatelessWidget {
   }
 }
 
-class RestaurantMenuScreen extends StatelessWidget {
+class RestaurantMenuScreen extends StatefulWidget {
   final String restaurantId;
   final String searchKey;
 
@@ -614,10 +614,18 @@ class RestaurantMenuScreen extends StatelessWidget {
     required this.searchKey,
   });
 
+  @override
+  _RestaurantMenuScreenState createState() => _RestaurantMenuScreenState();
+}
+
+class _RestaurantMenuScreenState extends State<RestaurantMenuScreen> {
+  TextEditingController searchController = TextEditingController();
+  String searchQuery = '';
+
   Stream<List<Map<String, dynamic>>> fetchDishes() {
     return FirebaseFirestore.instance
         .collection('Restaurants')
-        .doc(restaurantId)
+        .doc(widget.restaurantId)
         .snapshots()
         .map((snapshot) {
       var data = snapshot.data() as Map<String, dynamic>?;
@@ -647,7 +655,6 @@ class RestaurantMenuScreen extends StatelessWidget {
   Widget buildDishesCard(Map<String, dynamic> dish, String searchKey) {
     String dishName = dish['name'] ?? 'Unknown Dish';
     List<dynamic> allergens = dish['allergens'] ?? [];
-    // int comboPrice = dish['comboPrice'] ?? 0;
     int price = dish['price'] ?? 0;
     String sanitizedDishName = dishName.replaceAll(RegExp(r'\W+'), '_');
 
@@ -668,7 +675,7 @@ class RestaurantMenuScreen extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (context) => RestaurantMenuDetailsScreen(
-                    restaurantId: restaurantId,
+                    restaurantId: widget.restaurantId,
                     dish: dish,
                   ),
                 ),
@@ -723,13 +730,6 @@ class RestaurantMenuScreen extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontSize: 12),
                   ),
-                  // const SizedBox(height: 2),
-                  // Text(
-                  //   'Combo Price: £${comboPrice.toString()}',
-                  //   maxLines: 2,
-                  //   overflow: TextOverflow.ellipsis,
-                  //   style: const TextStyle(fontSize: 12),
-                  // ),
                   const SizedBox(height: 2),
                   Text(
                     'Price: £${price.toString()}',
@@ -755,7 +755,20 @@ class RestaurantMenuScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(
+        title: TextField(
+          controller: searchController,
+          decoration: const InputDecoration(
+            hintText: 'Search dishes...',
+            border: InputBorder.none,
+          ),
+          onChanged: (query) {
+            setState(() {
+              searchQuery = query.toLowerCase();
+            });
+          },
+        ),
+      ),
       body: SingleChildScrollView(
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 50, vertical: 40),
@@ -783,7 +796,10 @@ class RestaurantMenuScreen extends StatelessWidget {
                     return Center(child: Text("No dishes available"));
                   }
 
-                  var dishesList = snapshot.data!;
+                  var dishesList = snapshot.data!
+                      .where((dish) =>
+                          dish['name'].toLowerCase().contains(searchQuery))
+                      .toList();
 
                   return GridView.builder(
                     shrinkWrap: true,
@@ -797,7 +813,8 @@ class RestaurantMenuScreen extends StatelessWidget {
                     ),
                     itemCount: dishesList.length,
                     itemBuilder: (context, index) {
-                      return buildDishesCard(dishesList[index], searchKey);
+                      return buildDishesCard(
+                          dishesList[index], widget.searchKey);
                     },
                   );
                 },
@@ -1210,9 +1227,9 @@ class _EditRestaurantDetailsScreenState
   late TextEditingController aboutUsController;
   late TextEditingController collectionRadiusController;
   late TextEditingController collectionDeliveryRadiusController;
-  // late TextEditingController deliveryChargeController;
+  late TextEditingController deliveryChargeController;
   late TextEditingController deliveryRadiusController;
-  // late TextEditingController daysNoticeController;
+  late TextEditingController daysNoticeController;
   late TextEditingController cityController;
   late TextEditingController countryController;
   late TextEditingController firstLineController;
@@ -1237,7 +1254,10 @@ class _EditRestaurantDetailsScreenState
     collectionDeliveryRadiusController = TextEditingController(
         text: widget.restaurantData['generalInformation']
             ['collectionDeliveryRadius']);
-
+    deliveryChargeController = TextEditingController(
+        text: widget.restaurantData['generalInformation']['deliveryCharge']);
+    daysNoticeController = TextEditingController(
+        text: widget.restaurantData['generalInformation']['daysNotice']);
     var address = widget.restaurantData['generalInformation']['address']
         as Map<String, dynamic>;
     var bankDetails =
@@ -1269,6 +1289,8 @@ class _EditRestaurantDetailsScreenState
         'generalInformation.deliveryRadius': deliveryRadiusController.text,
         'generalInformation.collectionDeliveryRadius':
             collectionDeliveryRadiusController.text,
+        'generalInformation.deliveryCharge': deliveryChargeController.text,
+        'generalInformation.daysNotice': daysNoticeController.text,
         'generalInformation.address': {
           'city': cityController.text,
           'country': countryController.text,
@@ -1332,7 +1354,15 @@ class _EditRestaurantDetailsScreenState
               controller: deliveryRadiusController,
               decoration: InputDecoration(labelText: 'Delivery Radius'),
             ),
-            //TODO: ADD companyNumber, niNumber, generalInformation[collectionTimes, daysNotice, deliveryCharge, deliveryRadius, deliveryTimes, maxPeoplePerHour, minOrderSpend, phoneNumber]
+            TextField(
+              controller: deliveryChargeController,
+              decoration: InputDecoration(labelText: 'Delivery Charge'),
+            ),
+            TextField(
+              controller: daysNoticeController,
+              decoration: InputDecoration(labelText: 'Days Notice'),
+            ),
+            //TODO: ADD companyNumber, niNumber, generalInformation[collectionTimes, deliveryTimes, maxPeoplePerHour, minOrderSpend, phoneNumber]
             SizedBox(height: 30),
             const Text(
               'Address Field',
