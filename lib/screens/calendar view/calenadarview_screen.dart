@@ -196,8 +196,9 @@ class _Header extends StatelessWidget {
     final List<DropdownMenuItem<DateTime>> dropdownItems = List.generate(
       5,
       (index) {
-        final monthIndex = index % 12;
-        final yearToAdd = DateTime.now().year + (index ~/ 12);
+        final monthIndex = (selectedMonth.month - 1 + index) % 12;
+        final yearToAdd =
+            selectedMonth.year + ((selectedMonth.month - 1 + index) ~/ 12);
         final monthToAdd = DateTime(yearToAdd, monthIndex + 1);
 
         return DropdownMenuItem<DateTime>(
@@ -212,6 +213,7 @@ class _Header extends StatelessWidget {
         );
       },
     );
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 0),
       child: Row(

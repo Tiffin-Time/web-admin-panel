@@ -37,18 +37,6 @@ class _ViewRegisteredRestaurantsScreenState
         .map((snapshot) => snapshot.docs);
   }
 
-  // Stream<List<DocumentSnapshot>> fetchRestaurants() {
-  //   return FirebaseFirestore.instance
-  //       .collection('Restaurants')
-  //       .snapshots()
-  //       .map((snapshot) => snapshot.docs
-  //         ..map((doc) => {
-  //               'id': doc.id, // Capture the document ID from Firestore
-  //               ...doc.data() as Map<String,
-  //                   dynamic>, // Include other document data fields
-  //             }).toList());
-  // }
-
   Future<String> getImageUrl(String path) async {
     final ref = FirebaseStorage.instance.ref().child(path);
     try {
@@ -118,7 +106,8 @@ class _ViewRegisteredRestaurantsScreenState
                       ),
                       SizedBox(height: 4),
                       Text(
-                        restaurant['companyName'] ?? 'N/A',
+                        globals.capitalizeEachWord(
+                            restaurant['companyName'] ?? 'N/A'),
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
@@ -126,13 +115,6 @@ class _ViewRegisteredRestaurantsScreenState
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      // SizedBox(height: 2),
-                      // Text(
-                      //   'Company Address: ${restaurant['companyAddress'] ?? 'N/A}',
-                      //   maxLines: 2,
-                      //   overflow: TextOverflow.ellipsis,
-                      //   style: TextStyle(fontSize: 12),
-                      // ),
                       SizedBox(height: 2),
                       Text(
                         'Company Number: ${restaurant['companyNumber'] ?? 'N/A'}',
@@ -147,13 +129,6 @@ class _ViewRegisteredRestaurantsScreenState
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(fontSize: 12),
                       ),
-                      // SizedBox(height: 2),
-                      // Text(
-                      //   'Bank Details: ${restaurant['bankDetails'] ?? 'N/A}',
-                      //   maxLines: 2,
-                      //   overflow: TextOverflow.ellipsis,
-                      //   style: TextStyle(fontSize: 12),
-                      // ),
                     ],
                   ),
                 ),
@@ -315,37 +290,49 @@ class _ViewRegisteredRestaurantsScreenState
                     }
 
                     List<DocumentSnapshot> docs = snapshot.data!;
-                    List<Map<String, dynamic>> filteredRestaurants = docs
-                        .map(
-                          (doc) => {
-                            'id': doc.id, // Get document ID from Firestore
-                            ...doc.data() as Map<String,
-                                dynamic> // Spread other document data
-                          },
-                        ) // Handle possible null data
-                        .where((restaurant) =>
-                            restaurant != null) // Filter out null restaurants
-                        .map((restaurant) => {
-                              'companyName': restaurant?['companyName'] ?? '',
-                              'searchKey': restaurant?['searchKey'] ?? '',
-                              'companyNumber':
-                                  restaurant?['companyNumber'] ?? '',
-                              'niNumber': restaurant?['niNumber'] ?? '',
-                            }) // Normalize data to avoid null issues later
-                        .where((restaurant) =>
-                            restaurant['companyName']
-                                .toLowerCase()
-                                .contains(searchQuery) ||
-                            restaurant['searchKey']
-                                .toLowerCase()
-                                .contains(searchQuery) ||
-                            restaurant['companyNumber']
-                                .toLowerCase()
-                                .contains(searchQuery) ||
-                            restaurant['niNumber']
-                                .toLowerCase()
-                                .contains(searchQuery))
-                        .toList();
+                    // var docs = snapshot.data!.docs;
+
+                    var docsWithoutAdmin = docs.where((doc) {
+                      var docData = doc.data() as Map<String, dynamic>;
+                      var companyName =
+                          docData['companyName'].toString().toLowerCase();
+                      return companyName != 'admintiffintime';
+                    }).toList();
+
+                    List<Map<String, dynamic>> filteredRestaurants =
+                        docsWithoutAdmin
+                            .map(
+                              (doc) => {
+                                'id': doc.id, // Get document ID from Firestore
+                                ...doc.data() as Map<String,
+                                    dynamic> // Spread other document data
+                              },
+                            ) // Handle possible null data
+                            .where((restaurant) =>
+                                restaurant !=
+                                null) // Filter out null restaurants
+                            .map((restaurant) => {
+                                  'companyName':
+                                      restaurant?['companyName'] ?? '',
+                                  'searchKey': restaurant?['searchKey'] ?? '',
+                                  'companyNumber':
+                                      restaurant?['companyNumber'] ?? '',
+                                  'niNumber': restaurant?['niNumber'] ?? '',
+                                }) // Normalize data to avoid null issues later
+                            .where((restaurant) =>
+                                restaurant['companyName']
+                                    .toLowerCase()
+                                    .contains(searchQuery) ||
+                                restaurant['searchKey']
+                                    .toLowerCase()
+                                    .contains(searchQuery) ||
+                                restaurant['companyNumber']
+                                    .toLowerCase()
+                                    .contains(searchQuery) ||
+                                restaurant['niNumber']
+                                    .toLowerCase()
+                                    .contains(searchQuery))
+                            .toList();
 
                     return GridView.builder(
                       shrinkWrap: true,
@@ -547,6 +534,8 @@ class RestaurantDetailsScreen extends StatelessWidget {
                     subtitle: Text(companyParsedBankDetails),
                   ),
                   Divider(),
+                  //TODO: ADD companyNumber, niNumber, generalInformation[collectionTimes, daysNotice, deliveryCharge, deliveryRadius, deliveryTimes, maxPeoplePerHour, minOrderSpend, phoneNumber]
+
                   TextButton(
                     child: const Text("View Menu"),
                     onPressed: () {
@@ -605,7 +594,8 @@ class RestaurantMenuScreen extends StatelessWidget {
   Widget buildDishesCard(Map<String, dynamic> dish, String searchKey) {
     String dishName = dish['name'] ?? 'Unknown Dish';
     List<dynamic> allergens = dish['allergens'] ?? [];
-    int comboPrice = dish['comboPrice'] ?? 0;
+    // int comboPrice = dish['comboPrice'] ?? 0;
+    int price = dish['price'] ?? 0;
     String sanitizedDishName = dishName.replaceAll(RegExp(r'\W+'), '_');
 
     String typeOfDishStr = (dish['typeOfDish'] as Map<String, dynamic>)
@@ -658,7 +648,7 @@ class RestaurantMenuScreen extends StatelessWidget {
                         ),
                   const SizedBox(height: 4),
                   Text(
-                    dishName,
+                    globals.capitalizeEachWord(dishName),
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -680,9 +670,16 @@ class RestaurantMenuScreen extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontSize: 12),
                   ),
+                  // const SizedBox(height: 2),
+                  // Text(
+                  //   'Combo Price: £${comboPrice.toString()}',
+                  //   maxLines: 2,
+                  //   overflow: TextOverflow.ellipsis,
+                  //   style: const TextStyle(fontSize: 12),
+                  // ),
                   const SizedBox(height: 2),
                   Text(
-                    'Price: £${comboPrice.toString()}',
+                    'Price: £${price.toString()}',
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontSize: 12),
@@ -815,6 +812,7 @@ class RestaurantMenuDetailsScreen extends StatelessWidget {
     List<dynamic> allergens = dish['allergens'] ?? [];
     List<dynamic> assignTags = dish['assignTags'] ?? [];
     int comboPrice = dish['comboPrice'] ?? 0;
+    int price = dish['price'] ?? 0;
     String typeOfDishStr = (dish['typeOfDish'] as Map<String, dynamic>)
         .entries
         .where((entry) => entry.value == true)
@@ -907,9 +905,19 @@ class RestaurantMenuDetailsScreen extends StatelessWidget {
                   const Divider(),
                   ListTile(
                     leading: Icon(Icons.attach_money),
-                    title: Text('Price'),
+                    title: Text('Combo Price'),
                     subtitle: Text(
                       '£${comboPrice.toString()}',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const Divider(),
+                  ListTile(
+                    leading: Icon(Icons.attach_money),
+                    title: Text('Price'),
+                    subtitle: Text(
+                      '£${price.toString()}',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -965,11 +973,12 @@ class EditDishDetailsScreen extends StatefulWidget {
 class _EditDishDetailsScreenState extends State<EditDishDetailsScreen> {
   late TextEditingController nameController;
   late TextEditingController descriptionController;
+  late TextEditingController comboPriceController;
   late TextEditingController priceController;
-  late TextEditingController allergensController;
-  late TextEditingController tagsController;
   Map<String, dynamic> dateAvailability = {};
   Map<String, dynamic> typeOfDish = {};
+  List<String> allergens = [];
+  List<String> assignTags = [];
 
   @override
   void initState() {
@@ -977,15 +986,15 @@ class _EditDishDetailsScreenState extends State<EditDishDetailsScreen> {
     nameController = TextEditingController(text: widget.dish['name']);
     descriptionController =
         TextEditingController(text: widget.dish['description']);
-    priceController =
+    comboPriceController =
         TextEditingController(text: widget.dish['comboPrice'].toString());
-    allergensController =
-        TextEditingController(text: widget.dish['allergens'].join(', '));
-    tagsController =
-        TextEditingController(text: widget.dish['assignTags'].join(', '));
+    priceController =
+        TextEditingController(text: widget.dish['price'].toString());
     dateAvailability =
         Map<String, dynamic>.from(widget.dish['dateAvailability']);
     typeOfDish = Map<String, dynamic>.from(widget.dish['typeOfDish']);
+    allergens = List<String>.from(widget.dish['allergens'] ?? []);
+    assignTags = List<String>.from(widget.dish['assignTags'] ?? []);
   }
 
   Future<void> saveDishDetails() async {
@@ -997,11 +1006,10 @@ class _EditDishDetailsScreenState extends State<EditDishDetailsScreen> {
         'dishes.${widget.dish['name']}': {
           'name': nameController.text,
           'description': descriptionController.text,
-          'comboPrice': int.parse(priceController.text),
-          'allergens':
-              allergensController.text.split(',').map((e) => e.trim()).toList(),
-          'assignTags':
-              tagsController.text.split(',').map((e) => e.trim()).toList(),
+          'comboPrice': int.parse(comboPriceController.text),
+          'price': int.parse(priceController.text),
+          'allergens': allergens,
+          'assignTags': assignTags,
           'dateAvailability': dateAvailability,
           'typeOfDish': typeOfDish,
         }
@@ -1048,13 +1056,9 @@ class _EditDishDetailsScreenState extends State<EditDishDetailsScreen> {
               keyboardType: TextInputType.number,
             ),
             TextField(
-              controller: allergensController,
-              decoration:
-                  InputDecoration(labelText: 'Allergens (comma separated)'),
-            ),
-            TextField(
-              controller: tagsController,
-              decoration: InputDecoration(labelText: 'Tags (comma separated)'),
+              controller: comboPriceController,
+              decoration: InputDecoration(labelText: 'Combo Price'),
+              keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 16),
             Text('Date Availability'),
@@ -1078,6 +1082,48 @@ class _EditDishDetailsScreenState extends State<EditDishDetailsScreen> {
                 onChanged: (value) {
                   setState(() {
                     typeOfDish[type] = value;
+                  });
+                },
+              );
+            }).toList(),
+            const SizedBox(height: 16),
+            Text('Assigned Tags'),
+            ...[
+              'Vegetarian',
+              'Vegan',
+              'Jain',
+              'No Onion/ Garlic',
+              'High Protein',
+              'Meat'
+            ].map((assignTag) {
+              return CheckboxListTile(
+                title: Text(assignTag),
+                value: assignTags.contains(assignTag),
+                onChanged: (value) {
+                  setState(() {
+                    if (value == true) {
+                      assignTags.add(assignTag);
+                    } else {
+                      assignTags.remove(assignTag);
+                    }
+                  });
+                },
+              );
+            }).toList(),
+            const SizedBox(height: 16),
+            Text('Allergens'),
+            ...['Peanuts', 'Dairy', 'Gluten', 'Shellfish', 'Soy']
+                .map((allergen) {
+              return CheckboxListTile(
+                title: Text(allergen),
+                value: allergens.contains(allergen),
+                onChanged: (value) {
+                  setState(() {
+                    if (value == true) {
+                      allergens.add(allergen);
+                    } else {
+                      allergens.remove(allergen);
+                    }
                   });
                 },
               );
@@ -1211,6 +1257,9 @@ class _EditRestaurantDetailsScreenState
               controller: collectionRadiusController,
               decoration: InputDecoration(labelText: 'Collection Radius'),
             ),
+            //TODO: ADD companyNumber, niNumber, generalInformation[collectionTimes, daysNotice, deliveryCharge, deliveryRadius, deliveryTimes, maxPeoplePerHour, minOrderSpend, phoneNumber]
+            SizedBox(height: 16),
+            Text('Address Field'),
             TextField(
               controller: firstLineController,
               decoration: InputDecoration(labelText: 'Address Line 1'),
@@ -1227,6 +1276,8 @@ class _EditRestaurantDetailsScreenState
               controller: postcodeController,
               decoration: InputDecoration(labelText: 'Postcode'),
             ),
+            SizedBox(height: 16),
+            Text('Bank Details Field'),
             TextField(
               controller: accountNumberController,
               decoration: InputDecoration(labelText: 'Account Number'),
