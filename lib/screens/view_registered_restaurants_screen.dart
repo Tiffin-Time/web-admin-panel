@@ -428,7 +428,6 @@ class RestaurantDetailsScreen extends StatelessWidget {
       MaterialPageRoute(
         builder: (context) => RestaurantMenuScreen(
           restaurantId: restaurantId,
-          // dishes: dishes,
           searchKey: searchKey,
         ),
       ),
@@ -494,6 +493,12 @@ class RestaurantDetailsScreen extends StatelessWidget {
               data['generalInformation'] as Map<String, dynamic>? ?? {};
           var parsedAddress =
               generalInfo['address'] as Map<String, dynamic>? ?? {};
+          var collectionTimes =
+              generalInfo['collectionTimes'] as Map<String, dynamic>? ?? {};
+          var deliveryTimes =
+              generalInfo['deliveryTimes'] as Map<String, dynamic>? ?? {};
+          var maxPeoplePerHour =
+              generalInfo['maxPeoplePerHour'] as Map<String, dynamic>? ?? {};
 
           // Safely access String fields
           String companyName = data['companyName'] as String? ?? 'No Name';
@@ -513,7 +518,6 @@ class RestaurantDetailsScreen extends StatelessWidget {
               : 'No Bank Account';
 
           String searchKey = data['searchKey'] ?? 'Unknown searchKey';
-          // Handling List data safely
           List<String> daysOpen =
               List<String>.from(generalInfo['daysOpen'] ?? []);
           String daysOpenStr = daysOpen.join(', ');
@@ -587,8 +591,41 @@ class RestaurantDetailsScreen extends StatelessWidget {
                     subtitle: Text(niNumber),
                   ),
                   Divider(),
-                  //TODO: ADD generalInformation[collectionTimes, daysNotice, deliveryCharge, deliveryRadius, deliveryTimes, maxPeoplePerHour, minOrderSpend, phoneNumber]
+                  //TODO: ADD generalInformation[ maxPeoplePerHour, minOrderSpend, phoneNumber]
 
+                  ListTile(
+                    leading: Icon(Icons.access_time),
+                    title: Text("Collection Times"),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: collectionTimes.entries.map((entry) {
+                        return Text("${entry.key}: ${entry.value}");
+                      }).toList(),
+                    ),
+                  ),
+                  Divider(),
+                  ListTile(
+                    leading: Icon(Icons.delivery_dining),
+                    title: Text("Delivery Times"),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: deliveryTimes.entries.map((entry) {
+                        return Text("${entry.key}: ${entry.value}");
+                      }).toList(),
+                    ),
+                  ),
+                  Divider(),
+                  ListTile(
+                    leading: Icon(Icons.people),
+                    title: Text("Max People Per Hour"),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: maxPeoplePerHour.entries.map((entry) {
+                        return Text("${entry.key}: ${entry.value}");
+                      }).toList(),
+                    ),
+                  ),
+                  Divider(),
                   TextButton(
                     child: const Text("View Menu"),
                     onPressed: () {
@@ -1240,6 +1277,10 @@ class _EditRestaurantDetailsScreenState
   late TextEditingController businessNameController;
   List<String> daysOpen = [];
 
+  Map<String, TextEditingController> collectionTimesControllers = {};
+  Map<String, TextEditingController> deliveryTimesControllers = {};
+  Map<String, TextEditingController> maxPeoplePerHourControllers = {};
+
   @override
   void initState() {
     super.initState();
@@ -1257,7 +1298,8 @@ class _EditRestaurantDetailsScreenState
     deliveryChargeController = TextEditingController(
         text: widget.restaurantData['generalInformation']['deliveryCharge']);
     daysNoticeController = TextEditingController(
-        text: widget.restaurantData['generalInformation']['daysNotice']);
+        text: widget.restaurantData['generalInformation']['daysNotice']
+            .toString());
     var address = widget.restaurantData['generalInformation']['address']
         as Map<String, dynamic>;
     var bankDetails =
@@ -1275,10 +1317,47 @@ class _EditRestaurantDetailsScreenState
         TextEditingController(text: bankDetails['accountNumber']);
     businessNameController =
         TextEditingController(text: bankDetails['businessName']);
+
+    var collectionTimes = widget.restaurantData['generalInformation']
+            ['collectionTimes'] as Map<String, dynamic>? ??
+        {};
+    var deliveryTimes = widget.restaurantData['generalInformation']
+            ['deliveryTimes'] as Map<String, dynamic>? ??
+        {};
+    var maxPeoplePerHour = widget.restaurantData['generalInformation']
+            ['maxPeoplePerHour'] as Map<String, dynamic>? ??
+        {};
+
+    collectionTimes.forEach((key, value) {
+      collectionTimesControllers[key] = TextEditingController(text: value);
+    });
+
+    deliveryTimes.forEach((key, value) {
+      deliveryTimesControllers[key] = TextEditingController(text: value);
+    });
+
+    maxPeoplePerHour.forEach((key, value) {
+      maxPeoplePerHourControllers[key] = TextEditingController(text: value);
+    });
   }
 
   Future<void> saveRestaurantDetails() async {
     try {
+      Map<String, String> collectionTimes = {};
+      collectionTimesControllers.forEach((key, controller) {
+        collectionTimes[key] = controller.text;
+      });
+
+      Map<String, String> deliveryTimes = {};
+      deliveryTimesControllers.forEach((key, controller) {
+        deliveryTimes[key] = controller.text;
+      });
+
+      Map<String, String> maxPeoplePerHour = {};
+      maxPeoplePerHourControllers.forEach((key, controller) {
+        maxPeoplePerHour[key] = controller.text;
+      });
+
       await FirebaseFirestore.instance
           .collection('Restaurants')
           .doc(widget.restaurantId)
@@ -1290,7 +1369,8 @@ class _EditRestaurantDetailsScreenState
         'generalInformation.collectionDeliveryRadius':
             collectionDeliveryRadiusController.text,
         'generalInformation.deliveryCharge': deliveryChargeController.text,
-        'generalInformation.daysNotice': daysNoticeController.text,
+        'generalInformation.daysNotice':
+            int.tryParse(daysNoticeController.text) ?? 0,
         'generalInformation.address': {
           'city': cityController.text,
           'country': countryController.text,
@@ -1298,6 +1378,9 @@ class _EditRestaurantDetailsScreenState
           'postcode': postcodeController.text,
         },
         'generalInformation.daysOpen': daysOpen,
+        'generalInformation.collectionTimes': collectionTimes,
+        'generalInformation.deliveryTimes': deliveryTimes,
+        'generalInformation.maxPeoplePerHour': maxPeoplePerHour,
         'bankDetails': {
           'accountNumber': accountNumberController.text,
           'bankName': bankNameController.text,
@@ -1341,14 +1424,25 @@ class _EditRestaurantDetailsScreenState
               controller: aboutUsController,
               decoration: InputDecoration(labelText: 'About Us'),
             ),
+            SizedBox(height: 30),
+            const Text(
+              'Collection/Delivery Field',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             TextField(
               controller: collectionRadiusController,
-              decoration: InputDecoration(labelText: 'Collection Radius'),
+              decoration: const InputDecoration(
+                  labelText:
+                      'Collection Radius (If only collection is offered)'),
             ),
             TextField(
               controller: collectionDeliveryRadiusController,
-              decoration:
-                  InputDecoration(labelText: 'CollectionDelivery Radius'),
+              decoration: const InputDecoration(
+                  labelText:
+                      'Collection Radius (If Delivery is also offered )'),
             ),
             TextField(
               controller: deliveryRadiusController,
@@ -1361,8 +1455,8 @@ class _EditRestaurantDetailsScreenState
             TextField(
               controller: daysNoticeController,
               decoration: InputDecoration(labelText: 'Days Notice'),
+              keyboardType: TextInputType.number,
             ),
-            //TODO: ADD companyNumber, niNumber, generalInformation[collectionTimes, deliveryTimes, maxPeoplePerHour, minOrderSpend, phoneNumber]
             SizedBox(height: 30),
             const Text(
               'Address Field',
@@ -1426,6 +1520,48 @@ class _EditRestaurantDetailsScreenState
                     }
                   });
                 },
+              );
+            }).toList(),
+            SizedBox(height: 30),
+            const Text(
+              'Collection Times',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            ...collectionTimesControllers.keys.map((day) {
+              return TextField(
+                controller: collectionTimesControllers[day],
+                decoration: InputDecoration(labelText: '$day Collection Time'),
+              );
+            }).toList(),
+            SizedBox(height: 30),
+            const Text(
+              'Delivery Times',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            ...deliveryTimesControllers.keys.map((day) {
+              return TextField(
+                controller: deliveryTimesControllers[day],
+                decoration: InputDecoration(labelText: '$day Delivery Time'),
+              );
+            }).toList(),
+            SizedBox(height: 30),
+            const Text(
+              'Max People Per Hour',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            ...maxPeoplePerHourControllers.keys.map((day) {
+              return TextField(
+                controller: maxPeoplePerHourControllers[day],
+                decoration: InputDecoration(labelText: '$day Max People'),
               );
             }).toList(),
           ],
