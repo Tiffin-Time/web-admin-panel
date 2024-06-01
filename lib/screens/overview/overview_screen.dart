@@ -47,6 +47,8 @@ class _OverviewScreenState extends State<OverviewScreen> {
   final TextEditingController sortCodeController = TextEditingController();
   final TextEditingController accountNumberController = TextEditingController();
   final TextEditingController businessNameController = TextEditingController();
+  bool _isDisabled =
+      false; // Add this at the top of the _OverviewScreenState class
 
   Future<void> pickFile() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -275,6 +277,16 @@ class _OverviewScreenState extends State<OverviewScreen> {
                   thickness: 1,
                 ),
                 const Gap(30),
+                CheckboxListTile(
+                  title: const Text("Disable this company"),
+                  value: _isDisabled,
+                  onChanged: (newValue) {
+                    setState(() {
+                      _isDisabled = newValue!;
+                    });
+                  },
+                  controlAffinity: ListTileControlAffinity.leading,
+                ),
                 Align(
                   alignment: Alignment.centerLeft,
                   child: CustomButton(
@@ -453,6 +465,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
         'bankDetails': bankDetails,
         'companyAddress': companyAddressController.text,
         'searchKey': searchKey, // Store the searchKey in Firestore
+        'disabled': _isDisabled, // Add the disabled field here
       });
 
       // Store the generated document ID in the companyCredentials collection

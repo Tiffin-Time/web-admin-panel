@@ -1,5 +1,6 @@
 // import 'dart:html';
 import 'dart:html' hide VoidCallback;
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -49,6 +50,8 @@ class _ViewRegisteredRestaurantsScreenState
 
   Widget buildRestaurantCard(Map<String, dynamic> restaurant) {
     String companyName = restaurant['companyName'] ?? 'Unknown Restaurant';
+    bool isDisabled =
+        restaurant['disabled'] ?? false; // Check if the restaurant is disabled
 
     String sanitizedRestaurantName =
         companyName.replaceAll(RegExp(r'\W+'), '_');
@@ -66,9 +69,13 @@ class _ViewRegisteredRestaurantsScreenState
             children: [
               InkWell(
                 onTap: () async {
-                  String? docId = await globals.getDocIdBySearchKey(searchKey);
-                  print("Navigating to details with Restaurant ID: $docId");
-                  _navigateToDetailsScreen(context, docId);
+                  if (!isDisabled) {
+                    // Only navigate if the restaurant is not disabled
+                    String? docId =
+                        await globals.getDocIdBySearchKey(searchKey);
+                    print("Navigating to details with Restaurant ID: $docId");
+                    _navigateToDetailsScreen(context, docId);
+                  }
                 },
                 child: Padding(
                   padding: const EdgeInsets.all(8),
@@ -131,6 +138,34 @@ class _ViewRegisteredRestaurantsScreenState
                       ),
                     ],
                   ),
+                ),
+              ),
+              if (isDisabled)
+                Positioned.fill(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+                    child: Container(
+                      color: Colors.black.withOpacity(0.1),
+                    ),
+                  ),
+                ),
+              Positioned(
+                top: 0,
+                left: 0,
+                child: IconButton(
+                  icon: Icon(Icons.visibility_off, color: Colors.red),
+                  onPressed: () async {
+                    String? docId =
+                        await globals.getDocIdBySearchKey(searchKey);
+                    if (docId != null) {
+                      await FirebaseFirestore.instance
+                          .collection('Restaurants')
+                          .doc(docId)
+                          .update({
+                        'disabled': !isDisabled
+                      }); // Toggle the disabled status
+                    }
+                  },
                 ),
               ),
               Positioned(
@@ -318,6 +353,8 @@ class _ViewRegisteredRestaurantsScreenState
                                   'companyNumber':
                                       restaurant?['companyNumber'] ?? '',
                                   'niNumber': restaurant?['niNumber'] ?? '',
+                                  'disabled': restaurant?['disabled'] ??
+                                      false, // Add disabled status
                                 }) // Normalize data to avoid null issues later
                             .where((restaurant) =>
                                 restaurant['companyName']
@@ -463,6 +500,10 @@ class RestaurantDetailsScreen extends StatelessWidget {
           String aboutUs = generalInfo['aboutUs'] as String? ?? 'Not provided';
           String collectionRadius = generalInfo['collectionRadius'] ?? '';
           var bankDeatails = data['bankDetails'] as Map<String, dynamic>? ?? {};
+          String companyNumber =
+              data['companyNumber'] as String? ?? 'No Company Number';
+          String niNumber = data['niNumber'] as String? ?? 'No Ni Number';
+          //TODO: ADD generalInformation[collectionTimes, daysNotice, deliveryCharge, deliveryRadius, deliveryTimes, maxPeoplePerHour, minOrderSpend, phoneNumber]
 
           String companyParsedAddress = parsedAddress.isNotEmpty
               ? "${parsedAddress['firstLine']}, ${parsedAddress['city']}, ${parsedAddress['country']}, ${parsedAddress['postcode']}"
@@ -534,7 +575,19 @@ class RestaurantDetailsScreen extends StatelessWidget {
                     subtitle: Text(companyParsedBankDetails),
                   ),
                   Divider(),
-                  //TODO: ADD companyNumber, niNumber, generalInformation[collectionTimes, daysNotice, deliveryCharge, deliveryRadius, deliveryTimes, maxPeoplePerHour, minOrderSpend, phoneNumber]
+                  ListTile(
+                    leading: Icon(Icons.numbers),
+                    title: Text("Company Number"),
+                    subtitle: Text(companyNumber),
+                  ),
+                  Divider(),
+                  ListTile(
+                    leading: Icon(Icons.numbers),
+                    title: Text("NINumber"),
+                    subtitle: Text(niNumber),
+                  ),
+                  Divider(),
+                  //TODO: ADD generalInformation[collectionTimes, daysNotice, deliveryCharge, deliveryRadius, deliveryTimes, maxPeoplePerHour, minOrderSpend, phoneNumber]
 
                   TextButton(
                     child: const Text("View Menu"),
@@ -1156,6 +1209,10 @@ class _EditRestaurantDetailsScreenState
   late TextEditingController nameController;
   late TextEditingController aboutUsController;
   late TextEditingController collectionRadiusController;
+  late TextEditingController collectionDeliveryRadiusController;
+  // late TextEditingController deliveryChargeController;
+  late TextEditingController deliveryRadiusController;
+  // late TextEditingController daysNoticeController;
   late TextEditingController cityController;
   late TextEditingController countryController;
   late TextEditingController firstLineController;
@@ -1175,6 +1232,12 @@ class _EditRestaurantDetailsScreenState
         text: widget.restaurantData['generalInformation']['aboutUs']);
     collectionRadiusController = TextEditingController(
         text: widget.restaurantData['generalInformation']['collectionRadius']);
+    deliveryRadiusController = TextEditingController(
+        text: widget.restaurantData['generalInformation']['deliveryRadius']);
+    collectionDeliveryRadiusController = TextEditingController(
+        text: widget.restaurantData['generalInformation']
+            ['collectionDeliveryRadius']);
+
     var address = widget.restaurantData['generalInformation']['address']
         as Map<String, dynamic>;
     var bankDetails =
@@ -1203,6 +1266,9 @@ class _EditRestaurantDetailsScreenState
         'companyName': nameController.text,
         'generalInformation.aboutUs': aboutUsController.text,
         'generalInformation.collectionRadius': collectionRadiusController.text,
+        'generalInformation.deliveryRadius': deliveryRadiusController.text,
+        'generalInformation.collectionDeliveryRadius':
+            collectionDeliveryRadiusController.text,
         'generalInformation.address': {
           'city': cityController.text,
           'country': countryController.text,
@@ -1257,9 +1323,24 @@ class _EditRestaurantDetailsScreenState
               controller: collectionRadiusController,
               decoration: InputDecoration(labelText: 'Collection Radius'),
             ),
+            TextField(
+              controller: collectionDeliveryRadiusController,
+              decoration:
+                  InputDecoration(labelText: 'CollectionDelivery Radius'),
+            ),
+            TextField(
+              controller: deliveryRadiusController,
+              decoration: InputDecoration(labelText: 'Delivery Radius'),
+            ),
             //TODO: ADD companyNumber, niNumber, generalInformation[collectionTimes, daysNotice, deliveryCharge, deliveryRadius, deliveryTimes, maxPeoplePerHour, minOrderSpend, phoneNumber]
-            SizedBox(height: 16),
-            Text('Address Field'),
+            SizedBox(height: 30),
+            const Text(
+              'Address Field',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             TextField(
               controller: firstLineController,
               decoration: InputDecoration(labelText: 'Address Line 1'),
@@ -1276,8 +1357,14 @@ class _EditRestaurantDetailsScreenState
               controller: postcodeController,
               decoration: InputDecoration(labelText: 'Postcode'),
             ),
-            SizedBox(height: 16),
-            Text('Bank Details Field'),
+            SizedBox(height: 30),
+            const Text(
+              'Bank Details Field',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             TextField(
               controller: accountNumberController,
               decoration: InputDecoration(labelText: 'Account Number'),
@@ -1294,7 +1381,7 @@ class _EditRestaurantDetailsScreenState
               controller: businessNameController,
               decoration: InputDecoration(labelText: 'Business Name'),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 30),
             Text('Days Open'),
             ...['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) {
               return CheckboxListTile(
