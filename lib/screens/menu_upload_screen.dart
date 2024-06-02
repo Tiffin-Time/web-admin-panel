@@ -1170,7 +1170,7 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
                       DateTime now = DateTime.now();
 
                       // Check if today is Sunday and the current time is between 3 PM and 5 PM
-                      bool isSunday = now.weekday == DateTime.friday;
+                      bool isSunday = now.weekday == DateTime.sunday;
                       bool isBetween3And5PM = (now.hour >= 1 && now.hour < 23);
 
                       if (!(isSunday && isBetween3And5PM)) {

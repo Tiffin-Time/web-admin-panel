@@ -182,11 +182,44 @@ class _ViewMenuScreenState extends State<ViewMenuScreen> {
                 right: 0,
                 child: IconButton(
                   icon: const Icon(Icons.close, color: Colors.white),
-                  onPressed: () async {
-                    await deleteDish(dish['id']);
-                    setState(() {
-                      dishes = fetchDishes();
-                    });
+                  // onPressed: () async {
+                  //   await deleteDish(dish['id']);
+                  //   setState(() {
+                  //     dishes = fetchDishes();
+                  //   });
+                  // },
+                  onPressed: () {
+                    // Show confirmation dialog before deleting
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: Text("Confirm Deletion"),
+                          content: const Text(
+                              "Are you sure you want to delete this dish? This action cannot be undone."),
+                          actions: <Widget>[
+                            TextButton(
+                              child: Text("Cancel"),
+                              onPressed: () {
+                                // Dismiss the dialog but do not delete
+                                Navigator.of(context).pop();
+                              },
+                            ),
+                            TextButton(
+                              child: const Text("Delete",
+                                  style: TextStyle(color: Colors.red)),
+                              onPressed: () async {
+                                await deleteDish(dish['id']);
+                                setState(() {
+                                  dishes = fetchDishes();
+                                });
+                                Navigator.of(context).pop();
+                              },
+                            ),
+                          ],
+                        );
+                      },
+                    );
                   },
                 ),
               ),
