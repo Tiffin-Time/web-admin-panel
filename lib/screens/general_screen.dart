@@ -14,6 +14,8 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:typed_data';
+import 'package:image/image.dart' as img;
 
 enum DeliveryOption { collect, collectAndDelivery }
 
@@ -191,19 +193,54 @@ class _GeneralScreenState extends State<GeneralScreen> {
   //pick image
   Uint8List? _pickedImage;
   // Image upload function
+
+  //UPLOADING IMAGES WITHOUT COMPRESSING THEM
+  // Future<String> uploadImage(
+  //     Uint8List data, String companyName, String searchKey) async {
+  //   // String currentDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
+
+  //   final sanitizedCompanyName = companyName.replaceAll(RegExp(r'\W+'), '_');
+  //   String storagePath =
+  //       'company/images/general_information_images/$searchKey/$sanitizedCompanyName.jpg';
+
+  //   FirebaseStorage storage = FirebaseStorage.instance;
+  //   Reference ref = storage.ref().child(storagePath);
+
+  //   TaskSnapshot uploadTask = await ref.putData(data);
+
+  //   return await uploadTask.ref.getDownloadURL();
+  // }
+
+//UPLOADING IMAGES WHILE COMPRESSING THEM
   Future<String> uploadImage(
       Uint8List data, String companyName, String searchKey) async {
-    // String currentDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
-
+    // Sanitize the company name for the storage path
     final sanitizedCompanyName = companyName.replaceAll(RegExp(r'\W+'), '_');
     String storagePath =
         'company/images/general_information_images/$searchKey/$sanitizedCompanyName.jpg';
 
+    // Decode the image from the byte data
+    img.Image? image = img.decodeImage(data);
+    if (image == null) {
+      throw Exception('Failed to decode image');
+    }
+
+    // Resize the image to a maximum dimension (e.g., 600x600)
+    img.Image resizedImage = img.copyResize(image, width: 600, height: 600);
+
+    // Compress the image to JPEG with 80% quality
+    List<int> compressedBytes = img.encodeJpg(resizedImage, quality: 80);
+
+    // Convert the compressed bytes to Uint8List
+    Uint8List compressedData = Uint8List.fromList(compressedBytes);
+
+    // Upload the compressed image to Firebase Storage
     FirebaseStorage storage = FirebaseStorage.instance;
     Reference ref = storage.ref().child(storagePath);
 
-    TaskSnapshot uploadTask = await ref.putData(data);
+    TaskSnapshot uploadTask = await ref.putData(compressedData);
 
+    // Return the download URL of the uploaded image
     return await uploadTask.ref.getDownloadURL();
   }
 
@@ -290,7 +327,7 @@ class _GeneralScreenState extends State<GeneralScreen> {
         'deliveryRadius': deliveryRadiusController.text,
         'deliveryCharge': deliveryChargeController.text,
         'minOrderSpend': minOrderSpendController.text,
-        'orderSpendController': int.parse(orderSpendController.text),
+        'orderSpendController': double.parse(orderSpendController.text),
         'daysNotice': int.parse(daysNoticeController.text),
         'peopleController': int.parse(peopleController.text),
         'collectionTimes':
@@ -447,7 +484,7 @@ class _GeneralScreenState extends State<GeneralScreen> {
                                         enabled: true,
                                         maxlines: 1,
                                         borderRadius: 10.0,
-                                        maxlen: 3,
+                                        maxlen: 5,
                                         keyboardType: TextInputType.number,
                                       ),
                                     ],
@@ -479,7 +516,7 @@ class _GeneralScreenState extends State<GeneralScreen> {
                                         enabled: true,
                                         maxlines: 1,
                                         borderRadius: 10.0,
-                                        maxlen: 2,
+                                        maxlen: 5,
                                         keyboardType: TextInputType.number,
                                       ),
                                     ],
@@ -507,7 +544,7 @@ class _GeneralScreenState extends State<GeneralScreen> {
                                         enabled: true,
                                         maxlines: 1,
                                         borderRadius: 10.0,
-                                        maxlen: 3,
+                                        maxlen: 5,
                                         keyboardType: TextInputType.number,
                                       ),
                                       const Gap(20),
@@ -525,7 +562,7 @@ class _GeneralScreenState extends State<GeneralScreen> {
                                         enabled: true,
                                         maxlines: 1,
                                         borderRadius: 10.0,
-                                        maxlen: 3,
+                                        maxlen: 5,
                                         keyboardType: TextInputType.number,
                                       ),
                                       const Gap(20),
@@ -542,7 +579,7 @@ class _GeneralScreenState extends State<GeneralScreen> {
                                         enabled: true,
                                         maxlines: 1,
                                         borderRadius: 10.0,
-                                        maxlen: 3,
+                                        maxlen: 5,
                                         keyboardType: TextInputType.number,
                                       ),
                                     ],
@@ -578,7 +615,7 @@ class _GeneralScreenState extends State<GeneralScreen> {
                             enabled: true,
                             maxlines: 1,
                             borderRadius: 10.0,
-                            maxlen: 10,
+                            maxlen: 11,
                             keyboardType: TextInputType.number,
                           ),
                           const Gap(20),
@@ -652,7 +689,7 @@ class _GeneralScreenState extends State<GeneralScreen> {
                             enabled: true,
                             maxlines: 1,
                             borderRadius: 10.0,
-                            maxlen: 2,
+                            maxlen: 3,
                             keyboardType: TextInputType.number,
                           ),
                           const Gap(20),
@@ -722,12 +759,12 @@ class _GeneralScreenState extends State<GeneralScreen> {
                         deliveryRadiusController,
                         deliveryChargeController,
                         minOrderSpendController,
-                        collectionDeliveryRadiusController
+                        collectionDeliveryRadiusController,
                       ];
 
                       bool isValidNumericInput(String input) {
                         try {
-                          int.parse(input);
+                          double.parse(input);
                           return false;
                         } catch (e) {
                           return true;
@@ -739,7 +776,7 @@ class _GeneralScreenState extends State<GeneralScreen> {
                           (collectAndDeliveryControllers.any(
                                     (c) {
                                       try {
-                                        int.parse(c.text);
+                                        double.parse(c.text);
                                         return false;
                                       } catch (e) {
                                         return true;

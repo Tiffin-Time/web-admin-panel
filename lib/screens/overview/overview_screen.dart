@@ -276,7 +276,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
                   color: greyColor.withOpacity(0.6),
                   thickness: 1,
                 ),
-                const Gap(30),
+                const Gap(15),
                 CheckboxListTile(
                   title: const Text("Disable this company"),
                   value: _isDisabled,
@@ -287,6 +287,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
                   },
                   controlAffinity: ListTileControlAffinity.leading,
                 ),
+                const Gap(15),
                 Align(
                   alignment: Alignment.centerLeft,
                   child: CustomButton(
