@@ -504,11 +504,19 @@ class RestaurantDetailsScreen extends StatelessWidget {
           String companyName = data['companyName'] as String? ?? 'No Name';
           String aboutUs = generalInfo['aboutUs'] as String? ?? 'Not provided';
           String collectionRadius = generalInfo['collectionRadius'] ?? '';
+          String deliveryRadius = generalInfo['deliveryRadius'] ?? '';
+          String minOrderSpendForDelivery = generalInfo['minOrderSpend'] ?? '';
+          double minOrderSpendToMakeOrder =
+              generalInfo['orderSpendController'] ?? 0;
+          int maxPeoplePerDay = generalInfo['peopleController'] ?? 0;
+          String phoneNumber = generalInfo['phoneNumber'] ?? '';
+
+          String collectionDeliveryRadius =
+              generalInfo['collectionDeliveryRadius'] ?? '';
           var bankDeatails = data['bankDetails'] as Map<String, dynamic>? ?? {};
           String companyNumber =
               data['companyNumber'] as String? ?? 'No Company Number';
           String niNumber = data['niNumber'] as String? ?? 'No Ni Number';
-          //TODO: ADD generalInformation[collectionTimes, daysNotice, deliveryCharge, deliveryRadius, deliveryTimes, maxPeoplePerHour, minOrderSpend, phoneNumber]
 
           String companyParsedAddress = parsedAddress.isNotEmpty
               ? "${parsedAddress['firstLine']}, ${parsedAddress['city']}, ${parsedAddress['country']}, ${parsedAddress['postcode']}"
@@ -542,7 +550,7 @@ class RestaurantDetailsScreen extends StatelessWidget {
                     leading: Icon(Icons.restaurant),
                     title: Text(
                       companyName,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
@@ -556,9 +564,28 @@ class RestaurantDetailsScreen extends StatelessWidget {
                   ),
                   Divider(),
                   ListTile(
-                    leading: Icon(Icons.map),
-                    title: Text("Collection Radius"),
-                    subtitle: Text(collectionRadius),
+                    leading: Icon(Icons.calendar_today),
+                    title: Text("Phone Number"),
+                    subtitle: Text(phoneNumber),
+                  ),
+                  Divider(),
+                  const Text(
+                    'Company Information Field',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.numbers),
+                    title: Text("Company Number"),
+                    subtitle: Text(companyNumber),
+                  ),
+                  Divider(),
+                  ListTile(
+                    leading: Icon(Icons.numbers),
+                    title: Text("NINumber"),
+                    subtitle: Text(niNumber),
                   ),
                   Divider(),
                   ListTile(
@@ -579,20 +606,51 @@ class RestaurantDetailsScreen extends StatelessWidget {
                     subtitle: Text(companyParsedBankDetails),
                   ),
                   Divider(),
+                  const Text(
+                    'Collection/Delivery Field',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   ListTile(
-                    leading: Icon(Icons.numbers),
-                    title: Text("Company Number"),
-                    subtitle: Text(companyNumber),
+                    leading: Icon(Icons.map),
+                    title: const Text(
+                        "Collection Radius (If only collection is provided))"),
+                    subtitle: Text(collectionRadius),
                   ),
                   Divider(),
                   ListTile(
-                    leading: Icon(Icons.numbers),
-                    title: Text("NINumber"),
-                    subtitle: Text(niNumber),
+                    leading: Icon(Icons.map),
+                    title: const Text(
+                        "Collection Radius (If both collection and delivery are provided)"),
+                    subtitle: Text(collectionDeliveryRadius),
                   ),
                   Divider(),
-                  //TODO: ADD generalInformation[ maxPeoplePerHour, minOrderSpend, phoneNumber]
-
+                  ListTile(
+                    leading: Icon(Icons.map),
+                    title: Text("Delivery Radius"),
+                    subtitle: Text(deliveryRadius),
+                  ),
+                  Divider(),
+                  ListTile(
+                    leading: Icon(Icons.money_off_csred_outlined),
+                    title: Text("Minimum Spend To Order"),
+                    subtitle: Text(minOrderSpendToMakeOrder.toString()),
+                  ),
+                  Divider(),
+                  ListTile(
+                    leading: Icon(Icons.people),
+                    title: Text("Maximum Number Of People To Cater Per Day"),
+                    subtitle: Text(maxPeoplePerDay.toString()),
+                  ),
+                  Divider(),
+                  ListTile(
+                    leading: Icon(Icons.people),
+                    title: Text("Minimum Spend To Qualify For Delivery"),
+                    subtitle: Text(minOrderSpendForDelivery.toString()),
+                  ),
+                  Divider(),
                   ListTile(
                     leading: Icon(Icons.access_time),
                     title: Text("Collection Times"),
@@ -1276,6 +1334,12 @@ class _EditRestaurantDetailsScreenState
   late TextEditingController sortCodeController;
   late TextEditingController accountNumberController;
   late TextEditingController businessNameController;
+  late TextEditingController phoneNumberController;
+  late TextEditingController companyNumberController;
+  late TextEditingController minOrderSpendForDeliverController;
+  late TextEditingController minOrderSpendToMakeOrderController;
+  late TextEditingController maxPeoplePerDayController;
+
   List<String> daysOpen = [];
 
   Map<String, TextEditingController> collectionTimesControllers = {};
@@ -1293,6 +1357,10 @@ class _EditRestaurantDetailsScreenState
         text: widget.restaurantData['generalInformation']['collectionRadius']);
     deliveryRadiusController = TextEditingController(
         text: widget.restaurantData['generalInformation']['deliveryRadius']);
+    companyNumberController = TextEditingController(
+        text: widget.restaurantData['generalInformation']['companyNumber']);
+    phoneNumberController = TextEditingController(
+        text: widget.restaurantData['generalInformation']['phoneNumber']);
     collectionDeliveryRadiusController = TextEditingController(
         text: widget.restaurantData['generalInformation']
             ['collectionDeliveryRadius']);
@@ -1301,6 +1369,17 @@ class _EditRestaurantDetailsScreenState
     daysNoticeController = TextEditingController(
         text: widget.restaurantData['generalInformation']['daysNotice']
             .toString());
+    minOrderSpendForDeliverController = TextEditingController(
+        text: widget.restaurantData['generalInformation']['minOrderSpend']);
+
+    minOrderSpendToMakeOrderController = TextEditingController(
+        text: widget.restaurantData['generalInformation']
+                ['orderSpendController']
+            .toString());
+    maxPeoplePerDayController = TextEditingController(
+        text: widget.restaurantData['generalInformation']['peopleController']
+            .toString());
+
     var address = widget.restaurantData['generalInformation']['address']
         as Map<String, dynamic>;
     var bankDetails =
@@ -1367,6 +1446,14 @@ class _EditRestaurantDetailsScreenState
         'generalInformation.aboutUs': aboutUsController.text,
         'generalInformation.collectionRadius': collectionRadiusController.text,
         'generalInformation.deliveryRadius': deliveryRadiusController.text,
+        'generalInformation.companyNumber': companyNumberController.text,
+        'generalInformation.phoneNumber': phoneNumberController.text,
+        'generalInformation.minOrderSpend':
+            minOrderSpendForDeliverController.text,
+        'generalInformation.orderSpendController':
+            double.parse(minOrderSpendToMakeOrderController.text),
+        'generalInformation.peopleController':
+            double.parse(maxPeoplePerDayController.text),
         'generalInformation.collectionDeliveryRadius':
             collectionDeliveryRadiusController.text,
         'generalInformation.deliveryCharge': deliveryChargeController.text,
@@ -1426,6 +1513,14 @@ class _EditRestaurantDetailsScreenState
               controller: aboutUsController,
               decoration: InputDecoration(labelText: 'About Us'),
             ),
+            TextField(
+              controller: phoneNumberController,
+              decoration: InputDecoration(labelText: 'Phone Number'),
+            ),
+            TextField(
+              controller: phoneNumberController,
+              decoration: InputDecoration(labelText: 'Company Number'),
+            ),
             SizedBox(height: 30),
             const Text(
               'Collection/Delivery Field',
@@ -1457,6 +1552,24 @@ class _EditRestaurantDetailsScreenState
             TextField(
               controller: daysNoticeController,
               decoration: InputDecoration(labelText: 'Days Notice'),
+              keyboardType: TextInputType.number,
+            ),
+            TextField(
+              controller: minOrderSpendForDeliverController,
+              decoration: const InputDecoration(
+                  labelText: 'Minimum Order Spend To Qualify For Delivery'),
+              keyboardType: TextInputType.number,
+            ),
+            TextField(
+              controller: minOrderSpendToMakeOrderController,
+              decoration: const InputDecoration(
+                  labelText: 'Minimum Order Spend To Make An Order'),
+              keyboardType: TextInputType.number,
+            ),
+            TextField(
+              controller: maxPeoplePerDayController,
+              decoration: const InputDecoration(
+                  labelText: 'Maximum Number Of People To Cater For Per Day'),
               keyboardType: TextInputType.number,
             ),
             SizedBox(height: 30),
