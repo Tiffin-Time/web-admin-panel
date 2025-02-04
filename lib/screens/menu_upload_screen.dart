@@ -14,10 +14,14 @@ import 'package:adminpanelweb/widgets/custom_btn.dart';
 import 'package:adminpanelweb/widgets/custom_dis_textfield.dart';
 import 'package:adminpanelweb/widgets/custom_textfield.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:gap/gap.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:adminpanelweb/globals/globals.dart' as globals;
+import 'package:intl/intl.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 class MenuUploadScreen extends StatefulWidget {
   final String? userDocId;
@@ -114,6 +118,47 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
 
   DateAvailability _dateAvailability = DateAvailability.everyDay;
   DeliveryFee _deliveryFee = DeliveryFee.freeDelivery;
+  DateTime today = DateTime.now();
+  DateTime? startRange;
+  DateTime? endRange;
+  Set<DateTime> selectedDishDates = {}; //Store selected days
+
+  Widget buildOptionForDateAvailability() {
+    return Column(
+      children: [
+        TableCalendar(
+          focusedDay: today,
+          firstDay: DateTime.utc(2020, 1, 1),
+          lastDay: DateTime.utc(2030, 1, 1),
+          selectedDayPredicate: (day) {
+            return selectedDishDates
+                .any((selectedDay) => isSameDay(selectedDay, day));
+          },
+          onDaySelected: (selectedDay, focusedDay) {
+            setState(() {
+              today = focusedDay;
+              if (selectedDishDates.contains(selectedDay)) {
+                //remove the date if already selected
+                selectedDishDates.remove(selectedDay);
+              } else {
+                //add new date
+                selectedDishDates.add(selectedDay);
+              }
+            });
+          },
+        ),
+        SizedBox(
+          height: MediaQuery.of(context).size.height * 0.1,
+        ),
+        if (selectedDishDates.isNotEmpty)
+          Text(
+            'Selected dates:${selectedDishDates.map((entry) => entry.toLocal().toString().split(' ')[0]).join(', ')}',
+            textAlign: TextAlign.center,
+          )
+      ],
+    );
+  }
+  // BpoAKJnu5THlN8GIgvLR
 
   Widget buildOptionforDateAvail(String title, DateAvailability value) {
     bool isSelected = _dateAvailability == value;
@@ -410,6 +455,10 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
       _showError('Please select at least one allergen.');
       return;
     }
+    final DateFormat formatSelectedDates = DateFormat('EEEE - dd-MM');
+    final List<String> selectedDishDatesList = selectedDishDates
+        .map((date) => formatSelectedDates.format(date))
+        .toList();
 
     final dish = Dish(
       name: dishNameController.text,
@@ -422,7 +471,7 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
       dishImage: base64Encode(
           _selectedImageData!), // Use encoded image for local preview
       imageData: _selectedImageData!, // Store original image data
-      dateAvailability: getAvailabilityMap(_dateAvailability, isSelected),
+      dateAvailability: selectedDishDatesList,
       allergens: selectedAllergenList, // Include the allergen data
     );
 
@@ -448,6 +497,7 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
       dishPriceController.clear();
       dishComboPriceController.clear();
       selectedAllergens.updateAll((key, value) => false);
+      selectedDishDates.clear();
       // options.clear();
     }
   }
@@ -865,34 +915,7 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
                                     DateAvailability.selectedDays),
                                 _dateAvailability ==
                                         DateAvailability.selectedDays
-                                    ? Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          const Gap(15),
-                                          ToggleButtons(
-                                            borderRadius:
-                                                BorderRadius.circular(30),
-                                            onPressed: (int index) {
-                                              setState(() {
-                                                isSelected[index] =
-                                                    !isSelected[index];
-                                              });
-                                            },
-                                            isSelected: isSelected,
-                                            children: const [
-                                              Text('Mon'),
-                                              Text('Tue'),
-                                              Text('Wed'),
-                                              Text('Thu'),
-                                              Text('Fri'),
-                                              Text('Sat'),
-                                              Text('Sun'),
-                                            ],
-                                          ),
-                                          const Gap(20),
-                                        ],
-                                      )
+                                    ? buildOptionForDateAvailability()
                                     : const SizedBox(),
                                 const Gap(5),
                                 buildOptionforDateAvail(
@@ -1173,15 +1196,16 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
                       bool isSunday = now.weekday == DateTime.sunday;
                       bool isBetween3And5PM = (now.hour >= 1 && now.hour < 23);
 
-                      if (!(isSunday && isBetween3And5PM)) {
-                        ScaffoldMessenger.of(context)
-                            .showSnackBar(const SnackBar(
-                          content: Text(
-                              "You can only upload menus on Sundays between 3 PM and 5 PM"),
-                          backgroundColor: Colors.red,
-                        ));
-                        return; // Exit the function if it's not the allowed time
-                      } else if (dishes.isEmpty) {
+                      // if (!(isSunday && isBetween3And5PM)) {
+                      //   ScaffoldMessenger.of(context)
+                      //       .showSnackBar(const SnackBar(
+                      //     content: Text(
+                      //         "You can only upload menus on Sundays between 3 PM and 5 PM"),
+                      //     backgroundColor: Colors.red,
+                      //   ));
+                      //   return; // Exit the function if it's not the allowed time
+                      // }
+                      if (dishes.isEmpty) {
                         ScaffoldMessenger.of(context)
                             .showSnackBar(const SnackBar(
                           content: Text(
@@ -1287,110 +1311,6 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
       },
     );
   }
-
-  // void downloadCSV() {
-  //   List<List<dynamic>> rows = [];
-
-  //   rows.add(['-- Menu Upload --', '', '', '']);
-  //   rows.add(['']);
-
-  //   rows.add(['-> Uploaded Dishes', '', '', '']);
-  //   rows.add(['']);
-  //   if (dishes.isEmpty) {
-  //     rows.add(['No Dishes Uploaded']);
-  //   } else {
-  //     rows.add([
-  //       'No.',
-  //       'Name',
-  //       'Description',
-  //       'Price',
-  //       'Type of Dish',
-  //       'Assign Tag',
-  //       'Combo with another Dish',
-  //       'Combo Price',
-  //       'Dish Image',
-  //       'Date Availability',
-  //     ]);
-  //   }
-
-  //   for (int i = 0; i < dishes.length; i++) {
-  //     var dishDateAval = 'Everyday';
-  //     if (dishes[i].dateAvailability == DateAvailability.selectedDays) {
-  //       dishDateAval = 'Selected Days';
-  //     }
-  //     rows.add([
-  //       "${(i + 1)}). ",
-  //       dishes[i].name,
-  //       dishes[i].description,
-  //       dishes[i].price,
-  //       dishes[i].typeOfDish,
-  //       dishes[i].assignTags,
-  //       dishes[i].comboWithAnotherDish,
-  //       dishes[i].comboPrice,
-  //       'true',
-  //       dishDateAval,
-  //     ]);
-  //   }
-  //   rows.add(['']);
-
-  //   var isSubscriptionServiceString = 'No';
-  //   var deliveryFees = 'Free Delivery';
-  //   if (isSubscriptionService) {
-  //     isSubscriptionServiceString = 'Yes';
-  //   }
-
-  //   if (_deliveryFee == DeliveryFee.minimumOrderForFreeDelivery) {
-  //     deliveryFees = 'Minimum order spend for free delivery';
-  //   }
-
-  //   rows.add([
-  //     'Do you offer subscription service?',
-  //     '',
-  //     '',
-  //     isSubscriptionServiceString
-  //   ]);
-  //   rows.add([
-  //     'Does anything come included with a main?',
-  //     '',
-  //     '',
-  //     includeWithMainDetailController.text
-  //   ]);
-  //   rows.add(['Do you offer', '', '', deliveryFees]);
-  //   rows.add(['']);
-  //   rows.add(['-> Promotion Campaign', '', '', '']);
-  //   rows.add(['-']);
-  //   rows.add(['']);
-  //   rows.add(['-> Offers', '', '', '']);
-  //   rows.add(['']);
-
-  //   if (offers.isEmpty) {
-  //     rows.add(['No Offers Uploaded']);
-  //   } else {
-  //     rows.add(['No.', 'Dish Number', '% Off', 'Number of Days']);
-  //   }
-  //   for (int i = 0; i < offers.length; i++) {
-  //     rows.add([
-  //       "${(i + 1)}). ",
-  //       offers[i].mealsForWeek,
-  //       offers[i].week,
-  //       offers[i].offPresentage,
-  //     ]);
-  //   }
-  //   rows.add(['']);
-
-  //   String csv = const ListToCsvConverter().convert(rows);
-  //   final bytes = utf8.encode(csv);
-  //   final blob = html.Blob([bytes]);
-  //   final url = html.Url.createObjectUrlFromBlob(blob);
-  //   final anchor = html.document.createElement('a') as html.AnchorElement
-  //     ..href = url
-  //     ..style.display = 'none'
-  //     ..download = 'uploaded_menu.csv';
-  //   html.document.body!.children.add(anchor);
-  //   anchor.click();
-  //   html.document.body!.children.remove(anchor);
-  //   html.Url.revokeObjectUrl(url);
-  // }
 }
 
 Future<void> addDishToFirestore(List<Dish> dishes, String? userDocId) async {

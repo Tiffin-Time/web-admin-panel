@@ -11,7 +11,7 @@ class Dish {
   final String dishImage;
   Uint8List imageData; // Actual image data
   final List<String> allergens;
-  final Map<String, bool> dateAvailability;
+  final List<String> dateAvailability;
 
   Dish(
       {required this.name,

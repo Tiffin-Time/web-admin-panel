@@ -69,7 +69,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                         const Gap(20),
                         const CustomText(
                           size: 20,
-                          text: '\$1280',
+                          text: '\£1280',
                           fontWeight: FontWeight.bold,
                           textColor: blackColor,
                         ),

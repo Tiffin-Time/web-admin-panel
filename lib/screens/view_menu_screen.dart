@@ -146,12 +146,7 @@ class _ViewMenuScreenState extends State<ViewMenuScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Available: ' +
-                          (dish['dateAvailability'] as Map<String, dynamic>)
-                              .entries
-                              .where((entry) => entry.value == true)
-                              .map((entry) => entry.key)
-                              .join(', '),
+                      'Available: ${dish['dateAvailability']}',
                       style: const TextStyle(fontSize: 12),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
