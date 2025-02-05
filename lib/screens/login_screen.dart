@@ -5,7 +5,6 @@ typedef LoginSuccessCallback = void Function(bool isAdmin, String userDocId);
 
 class LoginPage extends StatefulWidget {
   final LoginSuccessCallback onLoginSuccess;
-  // final String? userDocId;
 
   const LoginPage({Key? key, required this.onLoginSuccess}) : super(key: key);
 
@@ -16,131 +15,164 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _companyNameController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _isLoading = false;
 
   void _login() async {
     String inputCompanyName = _companyNameController.text.trim();
     String password = _passwordController.text.trim();
 
-    // Check if the company name or password fields are empty
     if (inputCompanyName.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text("Company name and password cannot be empty"),
-        backgroundColor: Colors.red,
-      ));
-      return; // Stop the function if any field is empty
+      _showSnackbar("Company name and password cannot be empty", Colors.red);
+      return;
     }
 
-    // Create a search key from the input, similar to how 'searchKey' is stored in Firestore
+    setState(() {
+      _isLoading = true;
+    });
+
     String searchKey =
         inputCompanyName.toLowerCase().replaceAll(RegExp(r'[^a-zA-Z]+'), '');
 
     try {
-      // Query Firestore for documents where 'searchKey' matches the generated key
       var querySnapshot = await FirebaseFirestore.instance
           .collection('companyCredentials')
           .where('searchKey', isEqualTo: searchKey)
           .get();
 
+      bool loginSuccessful = false;
+
       if (querySnapshot.docs.isNotEmpty) {
-        bool loginSuccessful = false;
         for (var doc in querySnapshot.docs) {
           Map<String, dynamic> data = doc.data();
-
-          // Use password directly as the userDocId
           String userDocId = password;
 
-          // Check if the entered password matches the stored document ID (password)
           if (data['documentId'] == password) {
             bool isAdmin = (searchKey == "admintiffintime");
 
-            // Pass isAdmin and userDocId (password) to the callback
             widget.onLoginSuccess(isAdmin, userDocId);
 
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text("Login Successful"),
-              backgroundColor: Colors.green,
-            ));
+            _showSnackbar("Login Successful", Colors.green);
             loginSuccessful = true;
             break;
           }
         }
+      }
 
-        if (!loginSuccessful) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text("Login Failed: Incorrect password"),
-            backgroundColor: Colors.red,
-          ));
-        }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text("No such company found"),
-          backgroundColor: Colors.red,
-        ));
+      if (!loginSuccessful) {
+        _showSnackbar("Login Failed: Incorrect credentials", Colors.red);
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text("Error logging in: $e"),
-        backgroundColor: Colors.red,
-      ));
-      print("Login error: $e"); // More detailed logging for troubleshooting
+      _showSnackbar("Error logging in: $e", Colors.red);
     }
+
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
+  void _showSnackbar(String message, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: const TextStyle(fontSize: 16)),
+        backgroundColor: color,
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
+    bool isMobile = screenWidth < 600; // Responsive handling
 
     return Scaffold(
-      body: Center(
-        // Centers the login form on the screen
-        child: SingleChildScrollView(
-          // Allows the form to scroll
-          padding: EdgeInsets.symmetric(
-              horizontal: screenWidth * 0.1), // Responsive horizontal padding
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              const SizedBox(height: 40),
-              const Text('Please enter your login details',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 30),
-              TextField(
-                controller: _companyNameController,
-                decoration: const InputDecoration(
-                  labelText: 'Company Name',
-                  border: OutlineInputBorder(),
-                  prefixIcon:
-                      Icon(Icons.business), // Adding an icon to the text field
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF1E88E5), Color(0xFF42A5F5)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.symmetric(horizontal: isMobile ? 30 : 80),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.admin_panel_settings,
+                    size: 80, color: Colors.white),
+                const SizedBox(height: 20),
+                const Text(
+                  'Admin Login',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: _passwordController,
-                decoration: const InputDecoration(
-                  labelText: 'Password',
-                  border: OutlineInputBorder(),
-                  prefixIcon:
-                      Icon(Icons.lock), // Adding an icon to the text field
+                const SizedBox(height: 40),
+                _buildTextField(
+                  controller: _companyNameController,
+                  label: 'Company Name',
+                  icon: Icons.business,
                 ),
-                obscureText: true,
-              ),
-              const SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: _login,
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  backgroundColor: Colors.blueAccent,
-                  minimumSize:
-                      const Size(double.infinity, 50), // Set the text color
-                  textStyle: const TextStyle(fontSize: 18),
+                const SizedBox(height: 20),
+                _buildTextField(
+                  controller: _passwordController,
+                  label: 'Password',
+                  icon: Icons.lock,
+                  isPassword: true,
                 ),
-                child: const Text('Login'),
-              ),
-            ],
+                const SizedBox(height: 30),
+                _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : _buildLoginButton(),
+              ],
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    bool isPassword = false,
+  }) {
+    return TextField(
+      controller: controller,
+      obscureText: isPassword,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Colors.white),
+        prefixIcon: Icon(icon, color: Colors.white),
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.2),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoginButton() {
+    return ElevatedButton(
+      onPressed: _login,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.blueAccent,
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 50),
+        textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      child: const Text('Login'),
     );
   }
 }
