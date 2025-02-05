@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "tiffin-time-819e1"
-  }
+  },
+  "targets": {
+    "tiffin-time-819e1": {
+      "hosting": {
+        "admin-panel": [
+          "tiffin-time-819e1"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

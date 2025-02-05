@@ -22,20 +22,13 @@
       ]
     }
   ],
-  "hosting": {
-    "public": "build/web",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
-    "rewrites": [
-      {
-        "source": "/admin-panel/**",
-        "destination": "/index.html"
-      }
-    ]
-  },
+"hosting": [
+    {
+      "target": "admin-panel",
+      "public": "build/web",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]
+    }
+  ],
   "storage": {
     "rules": "storage.rules"
   },
