@@ -325,7 +325,10 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
         String imageUrl =
             await uploadImage(dish.imageData, searchKey, dish.name);
         existingDishes[dish.name] = dish.toFirestoreMap()
-          ..['dishImage'] = imageUrl;
+          ..['dishImage'] = imageUrl
+          ..['dateAvailability'] = dish.dateAvailability.contains("Everyday")
+              ? "Everyday"
+              : dish.dateAvailability;
       }
 
       // Update the Firestore document
@@ -455,10 +458,13 @@ class _MenuUploadScreenState extends State<MenuUploadScreen> {
       _showError('Please select at least one allergen.');
       return;
     }
-    final DateFormat formatSelectedDates = DateFormat('EEEE - dd-MM');
-    final List<String> selectedDishDatesList = selectedDishDates
-        .map((date) => formatSelectedDates.format(date))
-        .toList();
+
+    final List<String> selectedDishDatesList =
+        _dateAvailability == DateAvailability.everyDay
+            ? ["Everyday"]
+            : selectedDishDates
+                .map((date) => DateFormat('EEEE - dd-MM').format(date))
+                .toList();
 
     final dish = Dish(
       name: dishNameController.text,
