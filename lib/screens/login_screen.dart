@@ -22,7 +22,8 @@ class _LoginPageState extends State<LoginPage> {
     String password = _passwordController.text.trim();
 
     if (inputCompanyName.isEmpty || password.isEmpty) {
-      _showSnackbar("Company name and password cannot be empty", Colors.red);
+      _showSnackbar(
+          "Company name and password cannot be empty", Color(0xFFFF7F00));
       return;
     }
 
@@ -51,7 +52,7 @@ class _LoginPageState extends State<LoginPage> {
 
             widget.onLoginSuccess(isAdmin, userDocId);
 
-            _showSnackbar("Login Successful", Colors.green);
+            _showSnackbar("Login Successful", Color(0xFF0D6129));
             loginSuccessful = true;
             break;
           }
@@ -59,10 +60,10 @@ class _LoginPageState extends State<LoginPage> {
       }
 
       if (!loginSuccessful) {
-        _showSnackbar("Login Failed: Incorrect credentials", Colors.red);
+        _showSnackbar("Login Failed: Incorrect credentials", Color(0xFFFF7E00));
       }
     } catch (e) {
-      _showSnackbar("Error logging in: $e", Colors.red);
+      _showSnackbar("Error logging in: $e", Color(0xFFFF7E00));
     }
 
     setState(() {
@@ -83,7 +84,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
-    bool isMobile = screenWidth < 600; // Responsive handling
+    bool isMobile = screenWidth < 600;
 
     return Scaffold(
       body: Container(
@@ -91,7 +92,10 @@ class _LoginPageState extends State<LoginPage> {
         height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF1E88E5), Color(0xFF42A5F5)],
+            colors: [
+              Color(0xFF0D6129),
+              Color(0xFF04602B)
+            ], // Dark green gradient
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -103,14 +107,14 @@ class _LoginPageState extends State<LoginPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Icon(Icons.admin_panel_settings,
-                    size: 80, color: Colors.white),
+                    size: 80, color: Color(0xFFFF7F00)),
                 const SizedBox(height: 20),
                 const Text(
                   'Admin Login',
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: Color(0xFFFF7F00),
                   ),
                 ),
                 const SizedBox(height: 40),
@@ -128,7 +132,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 30),
                 _isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
+                    ? const CircularProgressIndicator(color: Color(0xFFFF7F00))
                     : _buildLoginButton(),
               ],
             ),
@@ -151,7 +155,7 @@ class _LoginPageState extends State<LoginPage> {
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: Colors.white),
-        prefixIcon: Icon(icon, color: Colors.white),
+        prefixIcon: Icon(icon, color: Color(0xFFFF7F00)),
         filled: true,
         fillColor: Colors.white.withOpacity(0.2),
         border: OutlineInputBorder(
@@ -166,8 +170,8 @@ class _LoginPageState extends State<LoginPage> {
     return ElevatedButton(
       onPressed: _login,
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.blueAccent,
+        backgroundColor: Color(0xFFFF7E00),
+        foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 50),
         textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
